@@ -1,0 +1,17 @@
+schema: '2.0'
+stages:
+  data-ct:
+    cmd: python covidx/ct/preprocessing.py --size 224 224 data/raw data/ct
+    deps:
+    - path: covidx/ct/preprocessing.py
+      md5: b3657a088c29bdf1e7a6d38e5803164a
+      size: 3348
+    - path: data/raw
+      md5: c4e3a5e4f53a1a3168343aa3828950f7.dir
+      size: 30755784753
+      nfiles: 194926
+    outs:
+    - path: data/ct
+      md5: ae616adfeaeb163d7c98d3e1e4c51aaf.dir
+      size: 5981742118
+      nfiles: 194925
