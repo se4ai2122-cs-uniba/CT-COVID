@@ -1,0 +1,21 @@
+schema: '2.0'
+stages:
+  data-seqct:
+    cmd: python covidx/ct/seq_preprocessing.py --size 224 224 data/raw data/seqct
+    deps:
+    - path: covidx/ct/seq_preprocessing.py
+      md5: ebeb00a072cfdc5ab715022e1e9d7db7
+      size: 5562
+    - path: data/raw
+      md5: c4e3a5e4f53a1a3168343aa3828950f7.dir
+      size: 30755784753
+      nfiles: 194926
+    params:
+      params.yaml:
+        data-seqct.ct-depth: 16
+        data-seqct.random-seed: 1816
+    outs:
+    - path: data/seqct
+      md5: a9bbfe6e909fb95392851c4ccec14584.dir
+      size: 2598180435
+      nfiles: 3231

@@ -1,5 +1,6 @@
 import os
 import re
+import yaml
 import argparse
 import pandas as pd
 import numpy as np
@@ -19,9 +20,13 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    # TODO: load from the DVC's YAML file the "ct_depth" and "random_seed" parameters
-    ct_depth = 16
-    random_seed = 42
+    # Load from the DVC's YAML file the "ct_depth" and "random_seed" parameters
+    with open("params.yaml", "r") as params_file:
+        params = yaml.safe_load(params_file)
+        params = params['data-seqct']
+    ct_depth = params['ct-depth']
+    random_seed = params['random-seed']
+    print("Using CT-Depth: {} and Random-Seed: {}".format(ct_depth, random_seed))
 
     # Set the random seed
     np.random.seed(random_seed)
