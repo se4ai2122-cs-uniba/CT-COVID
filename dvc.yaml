@@ -1,0 +1,18 @@
+stages:
+  data-ct:
+    cmd: python covidx/ct/preprocessing.py --size 224 224 data/raw data/ct
+    deps:
+    - covidx/ct/preprocessing.py
+    - data/raw
+    outs:
+    - data/ct
+  data-seqct:
+    cmd: python covidx/ct/seq_preprocessing.py --size 224 224 data/raw data/seqct
+    deps:
+    - covidx/ct/seq_preprocessing.py
+    - data/raw
+    params:
+    - data-seqct.ct-depth
+    - data-seqct.random-seed
+    outs:
+    - data/seqct
