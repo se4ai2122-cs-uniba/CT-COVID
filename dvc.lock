@@ -20,7 +20,7 @@ stages:
     deps:
     - path: covidx/ct/seq_preprocessing.py
       md5: ebeb00a072cfdc5ab715022e1e9d7db7
-      size: 5562
+      size: 5696
     - path: data/raw
       md5: c4e3a5e4f53a1a3168343aa3828950f7.dir
       size: 30755784753
@@ -32,5 +32,5 @@ stages:
     outs:
     - path: data/seqct
       md5: a9bbfe6e909fb95392851c4ccec14584.dir
-      size: 2598180435
+      size: 2598183666
       nfiles: 3231
