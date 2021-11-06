@@ -52,3 +52,6 @@ if __name__ == '__main__':
 
     with open(os.path.join(MODELS_PATH, MODEL_NAME) + '-report.json', 'w') as file:
         json.dump(metrics, file, indent=4)
+
+    with open("metrics.json", 'w') as file:
+        json.dump(report, file, indent=4)
