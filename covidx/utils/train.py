@@ -2,7 +2,7 @@ import time
 import torch
 import torchvision
 import numpy as np
-
+import random
 from tqdm import tqdm
 
 from covidx.cxr2.models import CXR2Net
@@ -21,11 +21,17 @@ def train_classifier(
         steps_per_epoch=None,
         weight_decay=0.0,
         n_workers=4,
+        seed=42,
         device=None,
         verbose=True,
         load_chkpt=False,
         chkpt_path='checkpoints/checkpoint.pt'
 ):
+    #SETTING THE SEEDS TO THE SAME VALUE
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    random.seed(seed)
+    np.random.seed(seed)
     # Get the device to use
     if device is None:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
