@@ -7,30 +7,11 @@ stages:
       md5: b3657a088c29bdf1e7a6d38e5803164a
       size: 3348
     - path: data/raw
-      md5: c4e3a5e4f53a1a3168343aa3828950f7.dir
-      size: 30755784753
-      nfiles: 194926
+      md5: 79cb3cab45b888c9b29e52f7a1bb1415.dir
+      size: 6259568533
+      nfiles: 39079
     outs:
     - path: data/ct
-      md5: ae616adfeaeb163d7c98d3e1e4c51aaf.dir
-      size: 5981742118
-      nfiles: 194925
-  data-seqct:
-    cmd: python covidx/ct/seq_preprocessing.py --size 224 224 data/raw data/seqct
-    deps:
-    - path: covidx/ct/seq_preprocessing.py
-      md5: ebeb00a072cfdc5ab715022e1e9d7db7
-      size: 5696
-    - path: data/raw
-      md5: c4e3a5e4f53a1a3168343aa3828950f7.dir
-      size: 30755784753
-      nfiles: 194926
-    params:
-      params.yaml:
-        data-seqct.ct-depth: 16
-        data-seqct.random-seed: 1816
-    outs:
-    - path: data/seqct
-      md5: a9bbfe6e909fb95392851c4ccec14584.dir
-      size: 2598183666
-      nfiles: 3231
+      md5: f85856632dd945eeb64b12a7ddffdb9d.dir
+      size: 1209139393
+      nfiles: 39079

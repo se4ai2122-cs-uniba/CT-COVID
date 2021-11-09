@@ -2,16 +2,4 @@ venv
 .idea
 __pycache__
 datasets
-
-ct-models
-ct-experiments
-ct-checkpoints
-ct-attentions
-ct-attentions-seq
-
-cxr2-models
-cxr2-experiments
-cxr2-visualization
-cxr2-misses
-
 visualization
