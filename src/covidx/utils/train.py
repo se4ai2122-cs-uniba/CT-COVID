@@ -5,7 +5,7 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from covidx.utils.torch import EarlyStopping, RunningAverageMetric, get_optimizer
+from .torch import EarlyStopping, RunningAverageMetric, get_optimizer
 
 
 def train_classifier(
