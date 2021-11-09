@@ -1,8 +1,8 @@
 stages:
   data-ct:
-    cmd: python covidx/ct/preprocessing.py --size 224 224 data/raw data/ct
+    cmd: python src/preprocessing.py --size 224 224 data/raw data/ct
     deps:
-    - covidx/ct/preprocessing.py
+    - src/preprocessing.py
     - data/raw
     outs:
     - data/ct

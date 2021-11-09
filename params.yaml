@@ -5,5 +5,5 @@ training:
   batch_size: 128
   epochs: 100
   patience: 5
-
+  data_path: 'data/ct'
 

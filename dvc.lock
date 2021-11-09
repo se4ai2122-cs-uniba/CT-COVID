@@ -1,9 +1,9 @@
 schema: '2.0'
 stages:
   data-ct:
-    cmd: python covidx/ct/preprocessing.py --size 224 224 data/raw data/ct
+    cmd: python src/preprocessing.py --size 224 224 data/raw data/ct
     deps:
-    - path: covidx/ct/preprocessing.py
+    - path: src/preprocessing.py
       md5: b3657a088c29bdf1e7a6d38e5803164a
       size: 3348
     - path: data/raw
