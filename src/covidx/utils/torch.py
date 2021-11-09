@@ -3,7 +3,7 @@ import numpy as np
 
 
 class EarlyStopping:
-    """Early stops the training if validation loss doesn't improve after a given number of consecutive epochs"""
+    """Early stops the training if validation loss doesn't improve after a given number of consecutive epochs."""
     def __init__(self, model, chkpt_path, patience=1, delta=1e-4):
         """
         Instantiate an EarlyStopping object.
@@ -56,14 +56,9 @@ class EarlyStopping:
         else:
             self.counter += 1
 
-        # Check if the training should stop
-        if self.counter >= self.patience:
-            self.should_stop = True
-
 
 class RunningAverageMetric:
-    """Running (batched) average metric"""
-
+    """Running (batched) average metric."""
     def __init__(self, batch_size):
         """
         Initialize a running average metric object.
