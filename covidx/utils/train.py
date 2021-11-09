@@ -5,7 +5,6 @@ import numpy as np
 import random
 from tqdm import tqdm
 
-from covidx.cxr2.models import CXR2Net
 from covidx.utils.torch import EarlyStopping, RunningAverageMetric, get_optimizer
 
 
@@ -115,15 +114,8 @@ def train_classifier(
 
             inputs, targets = inputs.to(device), targets.to(device)
             optimizer.zero_grad()
-            if isinstance(model, CXR2Net) and isinstance(model.network, torch.nn.Sequential) \
-                    and isinstance(model.network[1], torchvision.models.Inception3):
-                outputs, aux_outputs = model(inputs)
-                outputs = torch.log_softmax(outputs, dim=1)
-                aux_outputs = torch.log_softmax(aux_outputs, dim=1)
-                loss = nll_loss(outputs, targets) + 0.3 * nll_loss(aux_outputs, targets)
-            else:
-                outputs = torch.log_softmax(model(inputs), dim=1)
-                loss = nll_loss(outputs, targets)
+            outputs = torch.log_softmax(model(inputs), dim=1)
+            loss = nll_loss(outputs, targets)
             running_train_loss(loss.item())
             loss /= train_loader.batch_size
             loss.backward()
