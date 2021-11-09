@@ -6,9 +6,6 @@ import pandas as pd
 from PIL import Image as pil
 from PIL import ImageOps as pilops
 
-ROOT_DATAPATH = 'datasets/covidx-ct'
-ROOT_SEQ_DATAPATH = 'datasets/covidx-seqct'
-
 
 class CTDataset(torch.utils.data.Dataset):
     def __init__(self, path, dataframe, equalize=False, augment=False):
@@ -129,27 +126,15 @@ def load_datasets_labels(path, num_classes=3):
     return train_df, valid_df, test_df
 
 
-def load_datasets(num_classes=3, equalize=False, augment=True):
-    train_df, valid_df, test_df = load_datasets_labels(ROOT_DATAPATH, num_classes=num_classes)
+def load_datasets(data_path, num_classes=3, equalize=False, augment=True):
+    train_df, valid_df, test_df = load_datasets_labels(data_path, num_classes=num_classes)
 
     # Instantiate the datasets (notice data augmentation on train data)
-    train_images_path = os.path.join(ROOT_DATAPATH, 'train')
-    valid_images_path = os.path.join(ROOT_DATAPATH, 'valid')
-    test_images_path = os.path.join(ROOT_DATAPATH, 'test')
+    train_images_path = os.path.join(data_path, 'train')
+    valid_images_path = os.path.join(data_path, 'valid')
+    test_images_path = os.path.join(data_path, 'test')
     train_data = CTDataset(train_images_path, train_df, equalize=equalize, augment=augment)
     valid_data = CTDataset(valid_images_path, valid_df, equalize=equalize, augment=False)
     test_data = CTDataset(test_images_path, test_df, equalize=equalize, augment=False)
     return train_data, valid_data, test_data
 
-
-def load_sequence_datasets(num_classes=3, equalize=False, augment=True):
-    train_df, valid_df, test_df = load_datasets_labels(ROOT_SEQ_DATAPATH, num_classes=num_classes)
-
-    # Instantiate the datasets (notice data augmentation on train data)
-    train_images_path = os.path.join(ROOT_SEQ_DATAPATH, 'train')
-    valid_images_path = os.path.join(ROOT_SEQ_DATAPATH, 'valid')
-    test_images_path = os.path.join(ROOT_SEQ_DATAPATH, 'test')
-    train_data = CTSeqDataset(train_images_path, train_df, equalize=equalize, augment=augment)
-    valid_data = CTSeqDataset(valid_images_path, valid_df, equalize=equalize, augment=False)
-    test_data = CTSeqDataset(test_images_path, test_df, equalize=equalize, augment=False)
-    return train_data, valid_data, test_data

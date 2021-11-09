@@ -4,8 +4,9 @@ import torchvision
 import numpy as np
 import random
 from tqdm import tqdm
+import os
 
-from covidx.utils.torch import EarlyStopping, RunningAverageMetric, get_optimizer
+from .torch import EarlyStopping, RunningAverageMetric, get_optimizer
 
 
 def train_classifier(
@@ -26,6 +27,9 @@ def train_classifier(
         load_chkpt=False,
         chkpt_path='checkpoints/checkpoint.pt'
 ):
+    if not os.path.isdir(chkpt_path.split('/')[0]):
+        os.mkdir(chkpt_path.split('/')[0])
+
     #SETTING THE SEEDS TO THE SAME VALUE
     torch.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)
