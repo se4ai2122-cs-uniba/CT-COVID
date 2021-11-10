@@ -3,26 +3,41 @@ import numpy as np
 
 
 class EarlyStopping:
-    """Early stops the training if validation loss doesn't improve after a given number of consecutive epochs"""
-    def __init__(self, model, patience=1, delta=1e-4):
+    """Early stops the training if validation loss doesn't improve after a given number of consecutive epochs."""
+    def __init__(self, model, chkpt_path, patience=1, delta=1e-4):
         """
         Instantiate an EarlyStopping object.
 
         :param model: The model.
+        :param chkpt_path: The filepath of the checkpoint file.
         :param patience: The number of consecutive epochs to wait.
         :param delta: The minimum change of the monitored quantity.
         """
+        if patience <= 0:
+            raise ValueError("The patience value must be positive")
+        if delta <= 0.0:
+            raise ValueError("The delta value must be positive")
         self.model = model
+        self.chkpt_path = chkpt_path
         self.patience = patience
         self.delta = delta
         self.best_loss = np.inf
-        self.should_stop = False
         self.counter = 0
-        self.best_state = None
 
     @property
-    def best_found(self):
-        return self.counter == 0 and self.best_loss != np.inf
+    def should_stop(self):
+        """
+        Check if the training process should stop.
+        """
+        return self.counter >= self.patience
+
+    def get_best_state(self):
+        """
+        Get the best model's state dictionary.
+        """
+        with open(self.chkpt_path, 'rb') as f:
+            best_state = torch.load(f)
+        return best_state
 
     def __call__(self, loss):
         """
@@ -34,36 +49,16 @@ class EarlyStopping:
         if loss < self.best_loss - self.delta:
             self.best_loss = loss
             self.counter = 0
-            self.best_state = self.model.state_dict()
+
+            # Save the best model state parameters
+            with open(self.chkpt_path, 'wb') as f:
+                torch.save(self.model.state_dict(), f)
         else:
             self.counter += 1
 
-        # Check if the training should stop
-        if self.counter >= self.patience:
-            self.should_stop = True
-
-    def load_state_dict(self, state_dict):
-        self.patience = state_dict['patience']
-        self.delta = state_dict['delta']
-        self.best_loss = state_dict['best_loss']
-        self.should_stop = state_dict['should_stop']
-        self.counter = state_dict['counter']
-        self.best_state = state_dict['best_state']
-
-    def state_dict(self):
-        return {
-            'patience': self.patience,
-            'delta': self.delta,
-            'best_loss': self.best_loss,
-            'should_stop': self.should_stop,
-            'counter': self.counter,
-            'best_state': self.best_state
-        }
-
 
 class RunningAverageMetric:
-    """Running (batched) average metric"""
-
+    """Running (batched) average metric."""
     def __init__(self, batch_size):
         """
         Initialize a running average metric object.

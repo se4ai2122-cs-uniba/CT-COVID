@@ -1,11 +1,10 @@
+import os
 import time
 import torch
 import torchvision
 import numpy as np
-import random
-from tqdm import tqdm
-import os
 
+from tqdm import tqdm
 from .torch import EarlyStopping, RunningAverageMetric, get_optimizer
 
 
@@ -20,8 +19,7 @@ def train_classifier(
         patience=5,
         steps_per_epoch=None,
         weight_decay=0.0,
-        n_workers=4,
-        seed=42,
+        n_workers=0,
         device=None,
         verbose=True,
         load_chkpt=False,
@@ -30,11 +28,6 @@ def train_classifier(
     if not os.path.isdir(chkpt_path.split('/')[0]):
         os.mkdir(chkpt_path.split('/')[0])
 
-    #SETTING THE SEEDS TO THE SAME VALUE
-    torch.manual_seed(seed)
-    torch.cuda.manual_seed_all(seed)
-    random.seed(seed)
-    np.random.seed(seed)
     # Get the device to use
     if device is None:
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -74,27 +67,20 @@ def train_classifier(
     )
 
     # Instantiate the early stopping callback
-    early_stopping = EarlyStopping(model, patience=patience)
-
+    early_stopping = EarlyStopping(model, chkpt_path, patience=patience)
     if load_chkpt:
-        checkpoint = torch.load(chkpt_path)
-        history = checkpoint['history']
-        start_epoch = checkpoint['epoch']
-        model.load_state_dict(checkpoint['model'])
-        optimizer.load_state_dict(checkpoint['optimizer'])
-        early_stopping.load_state_dict(checkpoint['early_stopping'])
-    else:
-        history = {
-            'train': {'loss': [], 'accuracy': []},
-            'validation': {'loss': [], 'accuracy': []}
-        }
-        start_epoch = 0
+        model.load_state_dict(early_stopping.get_best_state())
 
     # Compute the steps per epoch, if needed
     if steps_per_epoch is None:
         steps_per_epoch = len(train_loader)
 
-    for epoch in range(start_epoch, epochs):
+    history = {
+        'train': {'loss': [], 'accuracy': []},
+        'validation': {'loss': [], 'accuracy': []}
+    }
+
+    for epoch in range(epochs):
         start_time = time.time()
 
         # Initialize the tqdm train data loader, if verbose is enabled
@@ -176,20 +162,10 @@ def train_classifier(
 
         # Check if training should stop according to early stopping
         early_stopping(val_loss)
-
-        # Save the checkpoint
-        torch.save({
-            'epoch': epoch,
-            'model': model.state_dict(),
-            'optimizer': optimizer.state_dict(),
-            'early_stopping': early_stopping.state_dict(),
-            'history': history
-        }, chkpt_path)
-
         if early_stopping.should_stop:
             print('Early Stopping... Best Loss: %.4f' % early_stopping.best_loss)
             break
 
     # Reload the best parameters state
-    model.load_state_dict(early_stopping.best_state)
+    model.load_state_dict(early_stopping.get_best_state())
     return history
