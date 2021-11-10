@@ -1,9 +1,11 @@
 training:
-  lr: 1e-3
+  lr: 1e-4
   seed: 42
   optimizer: 'adam'
-  batch_size: 128
-  epochs: 100
-  patience: 5
+  batch_size: 32
+  epochs: 25
+  patience: 3
+  data_path: 'data/ct'
+predicting:
   data_path: 'data/ct'
 
