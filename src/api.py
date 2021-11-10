@@ -2,20 +2,15 @@ import io
 import os
 import torch
 import torchvision
-from datetime import datetime
-from functools import wraps
 from http import HTTPStatus
-
 from covidx.ct.models import CTNet
 from PIL import Image as pil
-from fastapi import FastAPI, Request, UploadFile, File, Depends
-from pydantic import BaseModel
+from fastapi import FastAPI, Request, UploadFile, File
 
 MODELS_PATH = 'models'
 MODEL_NAME = 'ct_net.pt'
 model_wrappers_dict = {}
-image_list = []
-device = None
+
 # Define application
 app = FastAPI(
     title="CT-COVID",
@@ -23,7 +18,7 @@ app = FastAPI(
     version="0.1",
 )
 
-
+# Loads the model
 @app.on_event("startup")
 def _load_models():
 
@@ -40,6 +35,8 @@ def _load_models():
     # Make sure the model is set to evaluation mode
     model.eval()
 
+
+# Run the application
 @app.get("/", tags=["General"])  # path operation decorator
 def _index(request: Request):
 
@@ -53,8 +50,6 @@ def _index(request: Request):
 
 @app.get("/models", tags=["Prediction"])
 def _get_models_list(request: Request):
-
-
     available_models = list(model_wrappers_dict.keys())
 
     response = {
@@ -65,32 +60,12 @@ def _get_models_list(request: Request):
 
     return response
 
+
+# Predict the disease
 @app.post("/predict")
-async def upload_predict(request: Request,  xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
-    b = (xmin,ymin,xmax,ymax)
-    img = create_upload_file(b, file)
-    prediction = predict(img)
-    response = {
-        "message": HTTPStatus.OK.phrase,
-        "status-code": HTTPStatus.OK,
-        "prediction": prediction
-    }
-
-
-    return response
-
-
-
-def create_upload_file(b: tuple, file: UploadFile = File(...)):
-    contents = file.file.read()
-    with pil.open(io.BytesIO(contents)) as img:
-        # Preprocess the image
-        img = img.convert(mode='L').crop(b).resize((224,224), resample=pil.BICUBIC)
-
-    return img
-
-
-def predict(img):
+async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
+    b = (xmin, ymin, xmax, ymax)
+    img = upload_file(b, file)
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     tensor = torchvision.transforms.functional.to_tensor(img)
     model = model_wrappers_dict['ctnet']
@@ -104,4 +79,20 @@ def predict(img):
         1: 'Pneumonia',
         2: 'COVID - 19'
     }
-    return prediction_dict[prediction]
+
+    response = {
+        "message": HTTPStatus.OK.phrase,
+        "status-code": HTTPStatus.OK,
+        "prediction": prediction_dict[prediction]
+    }
+
+    return response
+
+
+def upload_file(b: tuple, file: UploadFile = File(...)):
+    contents = file.file.read()
+    with pil.open(io.BytesIO(contents)) as img:
+        # Preprocess the image
+        img = img.convert(mode='L').crop(b).resize((224, 224), resample=pil.BICUBIC)
+
+    return img
