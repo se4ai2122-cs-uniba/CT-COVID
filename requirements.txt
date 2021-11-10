@@ -8,3 +8,7 @@ matplotlib
 scikit-learn
 torch
 torchvision
+fastapi[all]
+pydantic
+python-multipart
+dvc[gdrive]
