@@ -1,9 +1,9 @@
 schema: '2.0'
 stages:
   data-ct:
-    cmd: python src/preprocessing.py --size 224 224 data/raw data/ct
+    cmd: python covidx/ct/preprocessing.py --size 224 224 data/raw data/ct
     deps:
-    - path: src/preprocessing.py
+    - path: covidx/ct/preprocessing.py
       md5: b3657a088c29bdf1e7a6d38e5803164a
       size: 3348
     - path: data/raw
@@ -15,3 +15,26 @@ stages:
       md5: f85856632dd945eeb64b12a7ddffdb9d.dir
       size: 1209139393
       nfiles: 39079
+  train:
+    cmd: python src/experiments.py
+    deps:
+    - path: data/ct
+      md5: f85856632dd945eeb64b12a7ddffdb9d.dir
+      size: 1209139393
+      nfiles: 39079
+    - path: src/experiments.py
+      md5: 3502c25498d469708ca127c7644832ee
+      size: 1553
+    params:
+      params.yaml:
+        training.batch_size: 32
+        training.data_path: data/ct
+        training.epochs: 25
+        training.lr: 0.0001
+        training.optimizer: adam
+        training.patience: 3
+        training.seed: 42
+    outs:
+    - path: models/ct_net.pt
+      md5: 10439313de8d8bfe80e2ccdf4c0bcf9f
+      size: 156430735
