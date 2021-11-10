@@ -6,3 +6,18 @@ stages:
     - data/raw
     outs:
     - data/ct
+  train:
+    cmd: python src/experiments.py
+    deps:
+    - data/ct
+    - src/experiments.py
+    params:
+    - training.batch_size
+    - training.data_path
+    - training.epochs
+    - training.lr
+    - training.optimizer
+    - training.patience
+    - training.seed
+    outs:
+    - models/ct_net.pt

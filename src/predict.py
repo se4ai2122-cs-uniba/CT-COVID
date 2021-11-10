@@ -6,17 +6,23 @@ from sklearn import metrics
 from covidx.ct.dataset import load_datasets
 from covidx.ct.models import CTNet
 from covidx.utils.plot import save_attention_map
+import yaml
 
-MODELS_PATH = 'ct-models'
-MODEL_NAME = 'ct-resnet50-att2'
+MODELS_PATH = 'models'
+MODEL_NAME = 'ct_net.pt'
 
 if __name__ == '__main__':
-    _, _, test_data = load_datasets(num_classes=3)
+    with open("params.yaml", "r") as params_file:
+        params = yaml.safe_load(params_file)
+        params = params['training']
+
+    data_path = params['data_path']
+    _, _, test_data = load_datasets(data_path, num_classes=3)
 
     # Instantiate the model and load from folder
     model = CTNet(num_classes=3)
-    state_filepath = os.path.join(MODELS_PATH, MODEL_NAME + '.pt')
-    model.load_state_dict(torch.load(state_filepath))
+    state_filepath = os.path.join(MODELS_PATH, MODEL_NAME)
+    model.load_state_dict(torch.load(state_filepath)['model'])
 
     # Get the device to use
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -29,6 +35,9 @@ if __name__ == '__main__':
     model.eval()
 
     # Make the prediction
+    if not os.path.isdir('visualization/ct-attentions'):
+        os.mkdir('visualization/ct-attentions')
+
     y_pred = []
     y_true = []
     with torch.no_grad():
