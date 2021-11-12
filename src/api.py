@@ -6,6 +6,8 @@ from http import HTTPStatus
 from covidx.ct.models import CTNet
 from PIL import Image as pil
 from fastapi import FastAPI, Request, UploadFile, File
+import uvicorn
+
 
 MODELS_PATH = 'models'
 MODEL_NAME = 'ct_net.pt'
@@ -96,3 +98,7 @@ def upload_file(b: tuple, file: UploadFile = File(...)):
         img = img.convert(mode='L').crop(b).resize((224, 224), resample=pil.BICUBIC)
 
     return img
+
+
+if __name__ == "__main__":
+    uvicorn.run("api:app", host="0.0.0.0", port=5000, reload=True, reload_dirs=['src', 'models'])
