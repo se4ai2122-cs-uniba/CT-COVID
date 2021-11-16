@@ -28,7 +28,7 @@ def _load_models():
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print('Test using device: ' + str(device))
 
-    model = CTNet(num_classes=3)
+    model = CTNet(num_classes=3, pretrained=False)
     state_filepath = os.path.join(MODELS_PATH, MODEL_NAME)
     model.load_state_dict(torch.load(state_filepath)['model'])
     model_wrappers_dict['ctnet'] = model
