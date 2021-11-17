@@ -82,8 +82,10 @@ async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = MODEL_WRAPPERS['ctnet']
 
-    # Convert the input image to a tensor, move it to device and unsqueeze the batch dimension
+    # Convert the input image to a tensor, normalize it,
+    # move it to device and unsqueeze the batch dimension
     tensor = torchvision.transforms.functional.to_tensor(img)
+    tensor = torchvision.transforms.functional.normalize(tensor, (0.5,), (0.5,))
     tensor = tensor.to(device).unsqueeze(0)
 
     # Obtain the prediction by the model
