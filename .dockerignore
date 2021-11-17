@@ -1,9 +1,9 @@
 venv
 .idea
 __pycache__
-datasets
 visualization
 data/ct
 data/raw
 .dvc
-venv
+.git
+docs
