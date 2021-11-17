@@ -2,46 +2,54 @@ import io
 import os
 import torch
 import torchvision
-from http import HTTPStatus
-from covidx.ct.models import CTNet
-from PIL import Image as pil
-from fastapi import FastAPI, Request, UploadFile, File
 import uvicorn
 
+from http import HTTPStatus
+from PIL import Image as pil
+from fastapi import FastAPI, Request, UploadFile, File
+from covidx.ct.models import CTNet
 
+# Some global variables
 MODELS_PATH = 'models'
 MODEL_NAME = 'ct_net.pt'
-model_wrappers_dict = {}
+MODEL_WRAPPERS = dict()
+PREDICTION_TAGS = {
+    0: 'Normal',
+    1: 'Pneumonia',
+    2: 'COVID - 19'
+}
 
-# Define application
+# Define the FastAPI application
 app = FastAPI(
     title="CT-COVID",
     description="This API lets you make predictions of diseases analysing CT-scans.",
     version="0.1",
 )
 
-# Loads the model
+
 @app.on_event("startup")
 def _load_models():
-
     # Get the device to use
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('Test using device: ' + str(device))
+    print("Using device: {}".format(device))
 
+    # Load the model
     model = CTNet(num_classes=3, pretrained=False)
     state_filepath = os.path.join(MODELS_PATH, MODEL_NAME)
-    model.load_state_dict(torch.load(state_filepath)['model'])
-    model_wrappers_dict['ctnet'] = model
+    model_params = torch.load(state_filepath)['model']
+    model.load_state_dict(model_params)
+    MODEL_WRAPPERS['ctnet'] = model
+
     # Move the model to device
     model.to(device)
+
     # Make sure the model is set to evaluation mode
     model.eval()
 
 
-# Run the application
-@app.get("/", tags=["General"])  # path operation decorator
+@app.get("/", tags=["General"])
 def _index(request: Request):
-
+    # A OK-status response when connecting to the root
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
@@ -50,55 +58,57 @@ def _index(request: Request):
     return response
 
 
-@app.get("/models", tags=["Prediction"])
+@app.get("/models", tags=["Models"])
 def _get_models_list(request: Request):
+    # Get the available models
     available_models = list(model_wrappers_dict.keys())
 
+    # Send an OK-status response with the list of available models
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
         "data": available_models,
     }
-
     return response
 
 
-# Predict the disease
-@app.post("/predict")
+@app.post("/predict", tags=["Prediction"])
 async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
-    b = (xmin, ymin, xmax, ymax)
-    img = upload_file(b, file)
+    # Load and preprocess the image by upload
+    bbox = (xmin, ymin, xmax, ymax)
+    img = upload_file(bbox, file)
+
+    # Get the device to use and get the model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model = MODEL_WRAPPERS['ctnet']
+
+    # Convert the input image to a tensor, move it to device and unsqueeze the batch dimension
     tensor = torchvision.transforms.functional.to_tensor(img)
-    model = model_wrappers_dict['ctnet']
-    # unsqueeze provides the batch dimension
     tensor = tensor.to(device).unsqueeze(0)
-    prediction = model(tensor)
-    prediction = torch.argmax(prediction, dim=1).item()
 
-    prediction_dict = {
-        0: 'Normal',
-        1: 'Pneumonia',
-        2: 'COVID - 19'
-    }
+    # Obtain the prediction by the model
+    with torch.no_grad():  # Disable gradient graph building
+        prediction = model(tensor)
+        prediction = torch.argmax(prediction, dim=1).item()
 
+    # Send an OK-status response with the prediction
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "prediction": prediction_dict[prediction]
+        "prediction": PREDICTION_TAGS[prediction]
     }
-
     return response
 
 
-def upload_file(b: tuple, file: UploadFile = File(...)):
+def upload_file(bbox: tuple, file: UploadFile = File(...)):
+    # A synchronous utility function used to upload the image file
     contents = file.file.read()
     with pil.open(io.BytesIO(contents)) as img:
-        # Preprocess the image
-        img = img.convert(mode='L').crop(b).resize((224, 224), resample=pil.BICUBIC)
-
+        # Preprocess the image using Crop + Resize (with bicubic interpolation)
+        img = img.convert(mode='L').crop(bbox).resize((224, 224), resample=pil.BICUBIC)
     return img
 
 
 if __name__ == "__main__":
-    uvicorn.run("api:app", host="0.0.0.0", port=5000, reload=True, reload_dirs=['src', 'models'])
+    # Run uvicorn when running this script
+    uvicorn.run("api:app", host="0.0.0.0", port=5000, reload=True, reload_dirs=["src", "models"])
