@@ -28,7 +28,7 @@ app = FastAPI(
 
 
 @app.on_event("startup")
-def _load_models():
+def load_models():
     # Get the device to use
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print("Using device: {}".format(device))
@@ -47,32 +47,83 @@ def _load_models():
     model.eval()
 
 
-@app.get("/", tags=["General"])
-def _index(request: Request):
+@app.get(
+    "/", tags=["General"],
+    summary="Does nothing. Use this to test the connectivity to the service.",
+    responses={
+        200: {
+            "description": "A HTTP OK-status message with a welcome message.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "OK",
+                        "status-code": 200,
+                        "data": {"message": "Welcome to the CT-COVID analysis service!"}
+                    }
+                }
+            }
+        }
+    }
+)
+def index(request: Request):
     # A OK-status response when connecting to the root
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "data": {"message": "Welcome to CT-COVID classifier!"},
+        "data": {"message": "Welcome to the CT-COVID analysis service!"},
     }
     return response
 
 
-@app.get("/models", tags=["Models"])
-def _get_models_list(request: Request):
+@app.get(
+    "/models", tags=["Models"],
+    summary="Get the list of available models in the system.",
+    responses={
+        200: {
+            "description": "A list of model names.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "OK",
+                        "status-code": 200,
+                        "data": {"models": ["model1", "model2", "model3"]}
+                    }
+                }
+            }
+        }
+    }
+)
+def get_models_list(request: Request):
     # Get the available models
-    available_models = list(model_wrappers_dict.keys())
+    available_models = list(MODEL_WRAPPERS.keys())
 
     # Send an OK-status response with the list of available models
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "data": available_models,
+        "data": {"models": available_models},
     }
     return response
 
 
-@app.post("/predict", tags=["Prediction"])
+@app.post(
+    "/predict", tags=["Prediction"],
+    summary="Predict a CT image, given the bounding box of the relevant area and the image file.",
+    responses={
+        200: {
+            "description": "A disease prediction, i.e. one of {}.".format(list(PREDICTION_TAGS.values())),
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "OK",
+                        "status-code": 200,
+                        "data": {"prediction": "COVID - 19"}
+                    }
+                }
+            }
+        }
+    }
+)
 async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
     # Load and preprocess the image by upload
     bbox = (xmin, ymin, xmax, ymax)
@@ -97,17 +148,21 @@ async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, 
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "prediction": PREDICTION_TAGS[prediction]
+        "data": {"prediction": PREDICTION_TAGS[prediction]}
     }
     return response
 
 
 def upload_file(bbox: tuple, file: UploadFile = File(...)):
-    # A synchronous utility function used to upload the image file
+    """A synchronous utility function used to upload an image file."""
+    # Read the file contents
     contents = file.file.read()
+
+    # Open it as a PIL image and preprocess it
     with pil.open(io.BytesIO(contents)) as img:
         # Preprocess the image using Crop + Resize (with bicubic interpolation)
         img = img.convert(mode='L').crop(bbox).resize((224, 224), resample=pil.BICUBIC)
+
     return img
 
 
