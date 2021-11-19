@@ -6,7 +6,7 @@ import uvicorn
 
 from http import HTTPStatus
 from PIL import Image as pil
-from fastapi import FastAPI, Request, UploadFile, File
+from fastapi import FastAPI, Request, Query, UploadFile, File
 from covidx.ct.models import CTNet
 
 # Some global variables
@@ -52,7 +52,7 @@ def load_models():
     summary="Does nothing. Use this to test the connectivity to the service.",
     responses={
         200: {
-            "description": "A HTTP OK-status message with a welcome message.",
+            "description": "An HTTP OK-status message with a welcome message.",
             "content": {
                 "application/json": {
                     "example": {
@@ -124,7 +124,14 @@ def get_models_list(request: Request):
         }
     }
 )
-async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
+async def predict(
+    request: Request,
+    xmin: int = Query(None, description="The top-left bounding box X-coordinate."),
+    ymin: int = Query(None, description="The top-left bounding box Y-coordinate."),
+    xmax: int = Query(None, description="The bottom-right bounding box X-coordinate."),
+    ymax: int = Query(None, description="The bottom-right bounding box Y-coordinate."),
+    file: UploadFile = File(..., description="The CT image to predict.")
+):
     # Load and preprocess the image by upload
     bbox = (xmin, ymin, xmax, ymax)
     img = upload_file(bbox, file)
@@ -154,7 +161,13 @@ async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, 
 
 
 def upload_file(bbox: tuple, file: UploadFile = File(...)):
-    """A synchronous utility function used to upload an image file."""
+    """
+    A synchronous utility function used to upload an image file.
+
+    :param bbox: The image bounding box.
+    :param file: The FastAPI file uploader object.
+    :return: A preprocessed PIL image.
+    """
     # Read the file contents
     contents = file.file.read()
 
