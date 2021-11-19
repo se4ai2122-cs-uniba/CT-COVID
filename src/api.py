@@ -36,7 +36,7 @@ def load_models():
     # Load the model, map_location makes it work also on CPU
     model = CTNet(num_classes=3, pretrained=False)
     state_filepath = os.path.join(MODELS_PATH, MODEL_NAME)
-    model_params = torch.load(state_filepath, map_location='cpu')['model']
+    model_params = torch.load(state_filepath)['model']
     model.load_state_dict(model_params)
     MODEL_WRAPPERS['ctnet'] = model
 
