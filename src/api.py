@@ -10,6 +10,7 @@ from fastapi import FastAPI, Request, Query, UploadFile, File
 from covidx.ct.models import CTNet
 
 # Some global variables
+DEVICE = None
 MODELS_PATH = 'models'
 MODEL_NAME = 'ct_net.pt'
 MODEL_WRAPPERS = dict()
@@ -29,9 +30,10 @@ app = FastAPI(
 
 @app.on_event("startup")
 def load_models():
-    # Get the device to use
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print("Using device: {}".format(device))
+    # Set the device to use globally
+    global DEVICE
+    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("Using device: {}".format(DEVICE))
 
     # Load the model, map_location makes it work also on CPU
     model = CTNet(num_classes=3, pretrained=False)
@@ -41,7 +43,7 @@ def load_models():
     MODEL_WRAPPERS['ctnet'] = model
 
     # Move the model to device
-    model.to(device)
+    model.to(DEVICE)
 
     # Make sure the model is set to evaluation mode
     model.eval()
@@ -136,15 +138,14 @@ async def predict(
     bbox = (xmin, ymin, xmax, ymax)
     img = upload_file(bbox, file)
 
-    # Get the device to use and get the model
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    # Get the required model
     model = MODEL_WRAPPERS['ctnet']
 
     # Convert the input image to a tensor, normalize it,
     # move it to device and unsqueeze the batch dimension
     tensor = torchvision.transforms.functional.to_tensor(img)
     tensor = torchvision.transforms.functional.normalize(tensor, (0.5,), (0.5,))
-    tensor = tensor.to(device).unsqueeze(0)
+    tensor = tensor.unsqueeze(0).to(DEVICE)
 
     # Obtain the prediction by the model
     with torch.no_grad():  # Disable gradient graph building
