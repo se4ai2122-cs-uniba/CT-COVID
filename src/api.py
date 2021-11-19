@@ -2,103 +2,184 @@ import io
 import os
 import torch
 import torchvision
-from http import HTTPStatus
-from covidx.ct.models import CTNet
-from PIL import Image as pil
-from fastapi import FastAPI, Request, UploadFile, File
 import uvicorn
 
+from http import HTTPStatus
+from PIL import Image as pil
+from fastapi import FastAPI, Request, Query, UploadFile, File
+from covidx.ct.models import CTNet
 
+# Some global variables
+DEVICE = None
 MODELS_PATH = 'models'
 MODEL_NAME = 'ct_net.pt'
-model_wrappers_dict = {}
+MODEL_WRAPPERS = dict()
+PREDICTION_TAGS = {
+    0: 'Normal',
+    1: 'Pneumonia',
+    2: 'COVID - 19'
+}
 
-# Define application
+# Define the FastAPI application
 app = FastAPI(
     title="CT-COVID",
     description="This API lets you make predictions of diseases analysing CT-scans.",
     version="0.1",
 )
 
-# Loads the model
+
 @app.on_event("startup")
-def _load_models():
+def load_models():
+    # Set the device to use globally
+    global DEVICE
+    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("Using device: {}".format(DEVICE))
 
-    # Get the device to use
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print('Test using device: ' + str(device))
-
+    # Load the model, map_location makes it work also on CPU
     model = CTNet(num_classes=3, pretrained=False)
     state_filepath = os.path.join(MODELS_PATH, MODEL_NAME)
-    model.load_state_dict(torch.load(state_filepath)['model'])
-    model_wrappers_dict['ctnet'] = model
+    model_params = torch.load(state_filepath)['model']
+    model.load_state_dict(model_params)
+    MODEL_WRAPPERS['ctnet'] = model
+
     # Move the model to device
-    model.to(device)
+    model.to(DEVICE)
+
     # Make sure the model is set to evaluation mode
     model.eval()
 
 
-# Run the application
-@app.get("/", tags=["General"])  # path operation decorator
-def _index(request: Request):
-
+@app.get(
+    "/", tags=["General"],
+    summary="Does nothing. Use this to test the connectivity to the service.",
+    responses={
+        200: {
+            "description": "An HTTP OK-status message with a welcome message.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "OK",
+                        "status-code": 200,
+                        "data": {"message": "Welcome to the CT-COVID analysis service!"}
+                    }
+                }
+            }
+        }
+    }
+)
+def index(request: Request):
+    # A OK-status response when connecting to the root
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "data": {"message": "Welcome to CT-COVID classifier!"},
+        "data": {"message": "Welcome to the CT-COVID analysis service!"},
     }
     return response
 
 
-@app.get("/models", tags=["Prediction"])
-def _get_models_list(request: Request):
-    available_models = list(model_wrappers_dict.keys())
+@app.get(
+    "/models", tags=["Models"],
+    summary="Get the list of available models in the system.",
+    responses={
+        200: {
+            "description": "A list of model names.",
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "OK",
+                        "status-code": 200,
+                        "data": {"models": ["model1", "model2", "model3"]}
+                    }
+                }
+            }
+        }
+    }
+)
+def get_models_list(request: Request):
+    # Get the available models
+    available_models = list(MODEL_WRAPPERS.keys())
 
+    # Send an OK-status response with the list of available models
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "data": available_models,
+        "data": {"models": available_models},
     }
-
     return response
 
 
-# Predict the disease
-@app.post("/predict")
-async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
-    b = (xmin, ymin, xmax, ymax)
-    img = upload_file(b, file)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+@app.post(
+    "/predict", tags=["Prediction"],
+    summary="Predict a CT image, given the bounding box of the relevant area and the image file.",
+    responses={
+        200: {
+            "description": "A disease prediction, i.e. one of {}.".format(list(PREDICTION_TAGS.values())),
+            "content": {
+                "application/json": {
+                    "example": {
+                        "message": "OK",
+                        "status-code": 200,
+                        "data": {"prediction": "COVID - 19"}
+                    }
+                }
+            }
+        }
+    }
+)
+async def predict(
+    request: Request,
+    xmin: int = Query(None, description="The top-left bounding box X-coordinate."),
+    ymin: int = Query(None, description="The top-left bounding box Y-coordinate."),
+    xmax: int = Query(None, description="The bottom-right bounding box X-coordinate."),
+    ymax: int = Query(None, description="The bottom-right bounding box Y-coordinate."),
+    file: UploadFile = File(..., description="The CT image to predict.")
+):
+    # Load and preprocess the image by upload
+    bbox = (xmin, ymin, xmax, ymax)
+    img = upload_file(bbox, file)
+
+    # Get the required model
+    model = MODEL_WRAPPERS['ctnet']
+
+    # Convert the input image to a tensor, normalize it,
+    # move it to device and unsqueeze the batch dimension
     tensor = torchvision.transforms.functional.to_tensor(img)
-    model = model_wrappers_dict['ctnet']
-    # unsqueeze provides the batch dimension
-    tensor = tensor.to(device).unsqueeze(0)
-    prediction = model(tensor)
-    prediction = torch.argmax(prediction, dim=1).item()
+    tensor = torchvision.transforms.functional.normalize(tensor, (0.5,), (0.5,))
+    tensor = tensor.unsqueeze(0).to(DEVICE)
 
-    prediction_dict = {
-        0: 'Normal',
-        1: 'Pneumonia',
-        2: 'COVID - 19'
-    }
+    # Obtain the prediction by the model
+    with torch.no_grad():  # Disable gradient graph building
+        prediction = model(tensor)
+        prediction = torch.argmax(prediction, dim=1).item()
 
+    # Send an OK-status response with the prediction
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "prediction": prediction_dict[prediction]
+        "data": {"prediction": PREDICTION_TAGS[prediction]}
     }
-
     return response
 
 
-def upload_file(b: tuple, file: UploadFile = File(...)):
+def upload_file(bbox: tuple, file: UploadFile = File(...)):
+    """
+    A synchronous utility function used to upload an image file.
+
+    :param bbox: The image bounding box.
+    :param file: The FastAPI file uploader object.
+    :return: A preprocessed PIL image.
+    """
+    # Read the file contents
     contents = file.file.read()
+
+    # Open it as a PIL image and preprocess it
     with pil.open(io.BytesIO(contents)) as img:
-        # Preprocess the image
-        img = img.convert(mode='L').crop(b).resize((224, 224), resample=pil.BICUBIC)
+        # Preprocess the image using Crop + Resize (with bicubic interpolation)
+        img = img.convert(mode='L').crop(bbox).resize((224, 224), resample=pil.BICUBIC)
 
     return img
 
 
 if __name__ == "__main__":
-    uvicorn.run("api:app", host="0.0.0.0", port=5000, reload=True, reload_dirs=['src', 'models'])
+    # Run uvicorn when running this script
+    uvicorn.run("api:app", host="0.0.0.0", port=5000, reload=True, reload_dirs=["src", "models"])

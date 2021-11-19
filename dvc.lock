@@ -23,7 +23,7 @@ stages:
       size: 1209139393
       nfiles: 39079
     - path: src/experiments.py
-      md5: 3502c25498d469708ca127c7644832ee
+      md5: ff74500731a4ad8e61a912b88c75eb34
       size: 1553
     params:
       params.yaml:
@@ -36,5 +36,5 @@ stages:
         training.seed: 42
     outs:
     - path: models/ct_net.pt
-      md5: 10439313de8d8bfe80e2ccdf4c0bcf9f
+      md5: 8089d90968c4a99a379ccbf1cc82e828
       size: 156430735

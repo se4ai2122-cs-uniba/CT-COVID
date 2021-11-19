@@ -45,6 +45,7 @@ if __name__ == '__main__':
     MODEL_DIR = 'models'
     if not os.path.isdir(MODEL_DIR):
         os.mkdir(MODEL_DIR)
+    model = model.cpu()
     torch.save({
         'model': model.state_dict(),
         'history': history
