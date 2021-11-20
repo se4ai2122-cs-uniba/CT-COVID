@@ -6,11 +6,12 @@ import uvicorn
 
 from http import HTTPStatus
 from PIL import Image as pil
-from fastapi import FastAPI, Request, Query, UploadFile, File
+from fastapi import FastAPI, Request, UploadFile, File
+from fastapi.responses import StreamingResponse, FileResponse
+from covidx.utils.plot import save_binary_attention_map
 from covidx.ct.models import CTNet
 
 # Some global variables
-DEVICE = None
 MODELS_PATH = 'models'
 MODEL_NAME = 'ct_net.pt'
 MODEL_WRAPPERS = dict()
@@ -30,20 +31,19 @@ app = FastAPI(
 
 @app.on_event("startup")
 def load_models():
-    # Set the device to use globally
-    global DEVICE
-    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print("Using device: {}".format(DEVICE))
+    # Get the device to use
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("Using device: {}".format(device))
 
     # Load the model, map_location makes it work also on CPU
     model = CTNet(num_classes=3, pretrained=False)
     state_filepath = os.path.join(MODELS_PATH, MODEL_NAME)
-    model_params = torch.load(state_filepath)['model']
+    model_params = torch.load(state_filepath, map_location='cpu')['model']
     model.load_state_dict(model_params)
     MODEL_WRAPPERS['ctnet'] = model
 
     # Move the model to device
-    model.to(DEVICE)
+    model.to(device)
 
     # Make sure the model is set to evaluation mode
     model.eval()
@@ -54,7 +54,7 @@ def load_models():
     summary="Does nothing. Use this to test the connectivity to the service.",
     responses={
         200: {
-            "description": "An HTTP OK-status message with a welcome message.",
+            "description": "A HTTP OK-status message with a welcome message.",
             "content": {
                 "application/json": {
                     "example": {
@@ -108,67 +108,55 @@ def get_models_list(request: Request):
     return response
 
 
+def iterfile():
+    with open("example.png", mode="rb") as file_like:
+        yield from file_like
+
+
 @app.post(
     "/predict", tags=["Prediction"],
-    summary="Predict a CT image, given the bounding box of the relevant area and the image file.",
+    summary="Given the bounding box of the relevant area and the image file of a CT scan, tell if the patient has COVID"
+            " and return an heatmap of the pixels on which the model focused in order to provide the prediction.",
     responses={
         200: {
-            "description": "A disease prediction, i.e. one of {}.".format(list(PREDICTION_TAGS.values())),
+            "description": "A disease prediction, i.e. one of {}, and also an heatmap. The red zone was the most"
+                           "relevant for the prediction.".format(list(PREDICTION_TAGS.values())),
             "content": {
-                "application/json": {
-                    "example": {
-                        "message": "OK",
-                        "status-code": 200,
-                        "data": {"prediction": "COVID - 19"}
-                    }
-                }
+                "image/png": {"example": {"prediction": "COVID - 19"}}
             }
         }
     }
 )
-async def predict(
-    request: Request,
-    xmin: int = Query(None, description="The top-left bounding box X-coordinate."),
-    ymin: int = Query(None, description="The top-left bounding box Y-coordinate."),
-    xmax: int = Query(None, description="The bottom-right bounding box X-coordinate."),
-    ymax: int = Query(None, description="The bottom-right bounding box Y-coordinate."),
-    file: UploadFile = File(..., description="The CT image to predict.")
-):
+async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
     # Load and preprocess the image by upload
     bbox = (xmin, ymin, xmax, ymax)
     img = upload_file(bbox, file)
 
-    # Get the required model
+    # Get the device to use and get the model
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     model = MODEL_WRAPPERS['ctnet']
 
     # Convert the input image to a tensor, normalize it,
     # move it to device and unsqueeze the batch dimension
     tensor = torchvision.transforms.functional.to_tensor(img)
     tensor = torchvision.transforms.functional.normalize(tensor, (0.5,), (0.5,))
-    tensor = tensor.unsqueeze(0).to(DEVICE)
+    tensor = tensor.to(device).unsqueeze(0)
 
     # Obtain the prediction by the model
     with torch.no_grad():  # Disable gradient graph building
-        prediction = model(tensor)
+        prediction, att1, att2 = model(tensor, attention=True)
         prediction = torch.argmax(prediction, dim=1).item()
 
-    # Send an OK-status response with the prediction
-    response = {
-        "message": HTTPStatus.OK.phrase,
-        "status-code": HTTPStatus.OK,
-        "data": {"prediction": PREDICTION_TAGS[prediction]}
-    }
-    return response
+    stream = io.BytesIO()
+    tensor = torchvision.transforms.functional.normalize(tensor, (-1,), (2,))
+    save_binary_attention_map(stream, tensor, att1, att2)
+    stream.seek(0)
+    # Send a response with the prediction and the attention map
+    return StreamingResponse(stream, headers={"prediction": PREDICTION_TAGS[prediction]}, media_type="image/png")
 
 
 def upload_file(bbox: tuple, file: UploadFile = File(...)):
-    """
-    A synchronous utility function used to upload an image file.
-
-    :param bbox: The image bounding box.
-    :param file: The FastAPI file uploader object.
-    :return: A preprocessed PIL image.
-    """
+    """A synchronous utility function used to upload an image file."""
     # Read the file contents
     contents = file.file.read()
 

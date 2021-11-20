@@ -12,3 +12,4 @@ fastapi[all]
 pydantic
 python-multipart
 dvc[gdrive]
+opencv-python
