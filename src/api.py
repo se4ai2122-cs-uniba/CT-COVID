@@ -108,11 +108,6 @@ def get_models_list(request: Request):
     return response
 
 
-def iterfile():
-    with open("example.png", mode="rb") as file_like:
-        yield from file_like
-
-
 @app.post(
     "/predict", tags=["Prediction"],
     summary="Given the bounding box of the relevant area and the image file of a CT scan, tell if the patient has COVID"
@@ -120,7 +115,7 @@ def iterfile():
     responses={
         200: {
             "description": "A disease prediction, i.e. one of {}, and also an heatmap. The red zone was the most"
-                           "relevant for the prediction.".format(list(PREDICTION_TAGS.values())),
+                           " relevant for the prediction.".format(list(PREDICTION_TAGS.values())),
             "content": {
                 "image/png": {"example": {"prediction": "COVID - 19"}}
             }
