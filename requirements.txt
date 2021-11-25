@@ -1,4 +1,3 @@
-PyYAML
 tqdm
 numpy
 scipy
@@ -8,8 +7,10 @@ matplotlib
 scikit-learn
 torch
 torchvision
-fastapi[all]
+opencv-python
+PyYAML
 pydantic
 python-multipart
 dvc[gdrive]
-opencv-python
+fastapi[all]
+uvicorn
