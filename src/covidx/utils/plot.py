@@ -38,7 +38,7 @@ def plot_cxr2_errors(dataset, errors, model_name):
         plt.close()
 
 
-def save_binary_attention_map(filepath, img, att1, att2):
+def save_binary_attention_map(filepath_or_stream, img, att1, att2):
     # Move on CPU
     img = img.cpu()
     att1 = att1.cpu()
@@ -74,7 +74,7 @@ def save_binary_attention_map(filepath, img, att1, att2):
     img = torch.tensor(img).permute(2, 0, 1) / 255.0
     img_att = torch.tensor(img_att).permute(2, 0, 1) / 255.0
     img_grid = torch.stack([img, img_att])
-    torchvision.utils.save_image(img_grid, filepath, padding=4, nrow=2, pad_value=0)
+    torchvision.utils.save_image(img_grid, filepath_or_stream, padding=4, nrow=2, pad_value=0, format='png')
 
 
 def save_attention_map(filepath, img, att1, att2):

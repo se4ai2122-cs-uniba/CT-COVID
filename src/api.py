@@ -6,7 +6,9 @@ import uvicorn
 
 from http import HTTPStatus
 from PIL import Image as pil
-from fastapi import FastAPI, Request, Query, UploadFile, File
+from fastapi import Query, FastAPI, Request, UploadFile, File
+from fastapi.responses import StreamingResponse, FileResponse
+from covidx.utils.plot import save_binary_attention_map
 from covidx.ct.models import CTNet
 
 # Some global variables
@@ -110,18 +112,14 @@ def get_models_list(request: Request):
 
 @app.post(
     "/predict", tags=["Prediction"],
-    summary="Predict a CT image, given the bounding box of the relevant area and the image file.",
+    summary="Given the bounding box of the relevant area and the image file of a CT scan, tell if the patient has COVID"
+            " and return an heatmap of the pixels on which the model focused in order to provide the prediction.",
     responses={
         200: {
-            "description": "A disease prediction, i.e. one of {}.".format(list(PREDICTION_TAGS.values())),
+            "description": "A disease prediction, i.e. one of {}, and also an heatmap. The red zone was the most"
+                           " relevant for the prediction.".format(list(PREDICTION_TAGS.values())),
             "content": {
-                "application/json": {
-                    "example": {
-                        "message": "OK",
-                        "status-code": 200,
-                        "data": {"prediction": "COVID - 19"}
-                    }
-                }
+                "image/png": {"example": {"prediction": "COVID - 19"}}
             }
         }
     }
@@ -149,16 +147,15 @@ async def predict(
 
     # Obtain the prediction by the model
     with torch.no_grad():  # Disable gradient graph building
-        prediction = model(tensor)
+        prediction, att1, att2 = model(tensor, attention=True)
         prediction = torch.argmax(prediction, dim=1).item()
 
-    # Send an OK-status response with the prediction
-    response = {
-        "message": HTTPStatus.OK.phrase,
-        "status-code": HTTPStatus.OK,
-        "data": {"prediction": PREDICTION_TAGS[prediction]}
-    }
-    return response
+    # Send a response with the prediction and the attention map
+    stream = io.BytesIO()
+    tensor = torchvision.transforms.functional.normalize(tensor, (-1,), (2,))
+    save_binary_attention_map(stream, tensor, att1, att2)
+    stream.seek(0)
+    return StreamingResponse(stream, headers={"prediction": PREDICTION_TAGS[prediction]}, media_type="image/png")
 
 
 def upload_file(bbox: tuple, file: UploadFile = File(...)):
