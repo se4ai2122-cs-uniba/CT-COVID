@@ -6,12 +6,13 @@ import uvicorn
 
 from http import HTTPStatus
 from PIL import Image as pil
-from fastapi import FastAPI, Request, UploadFile, File
+from fastapi import Query, FastAPI, Request, UploadFile, File
 from fastapi.responses import StreamingResponse, FileResponse
 from covidx.utils.plot import save_binary_attention_map
 from covidx.ct.models import CTNet
 
 # Some global variables
+DEVICE = None
 MODELS_PATH = 'models'
 MODEL_NAME = 'ct_net.pt'
 MODEL_WRAPPERS = dict()
@@ -32,8 +33,10 @@ app = FastAPI(
 @app.on_event("startup")
 def load_models():
     # Get the device to use
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    print("Using device: {}".format(device))
+    # Set the device to use globally	    # Get the device to use
+    global DEVICE
+    DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print("Using device: {}".format(DEVICE))
 
     # Load the model, map_location makes it work also on CPU
     model = CTNet(num_classes=3, pretrained=False)
@@ -43,7 +46,7 @@ def load_models():
     MODEL_WRAPPERS['ctnet'] = model
 
     # Move the model to device
-    model.to(device)
+    model.to(DEVICE)
 
     # Make sure the model is set to evaluation mode
     model.eval()
@@ -122,7 +125,13 @@ def get_models_list(request: Request):
         }
     }
 )
-async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, file: UploadFile = File(...)):
+async def predict(request: Request,
+    xmin: int = Query(None, description="The top-left bounding box X-coordinate."),
+    ymin: int = Query(None, description="The top-left bounding box Y-coordinate."),
+    xmax: int = Query(None, description="The bottom-right bounding box X-coordinate."),
+    ymax: int = Query(None, description="The bottom-right bounding box Y-coordinate."),
+    file: UploadFile = File(..., description="The CT image to predict.")
+    ):
     # Load and preprocess the image by upload
     bbox = (xmin, ymin, xmax, ymax)
     img = upload_file(bbox, file)
@@ -151,7 +160,10 @@ async def predict(request: Request, xmin: int, ymin: int, xmax: int, ymax: int, 
 
 
 def upload_file(bbox: tuple, file: UploadFile = File(...)):
-    """A synchronous utility function used to upload an image file."""
+    """A synchronous utility function used to upload an image file.
+        :param bbox: The image bounding box.
+        :param file: The FastAPI file uploader object.
+        :return: A preprocessed PIL image."""
     # Read the file contents
     contents = file.file.read()
 
