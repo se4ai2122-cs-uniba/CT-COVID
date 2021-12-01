@@ -1,9 +1,11 @@
-venv
-.idea
-__pycache__
-visualization
-data/ct
-data/raw
-.dvc
-.git
-docs
+# Ignore everything
+**
+
+# Allow these directories and files
+!src/
+!models/
+!requirements.txt
+
+# Ignore directories and files in allowed directories
+**/.gitignore
+**/__pycache__
