@@ -9,6 +9,7 @@ import {
 
 import Header from './Header'
 import Models from './Models'
+import Predict from './Predict'
 
 function App({ Component }) {
   return (
@@ -17,6 +18,7 @@ function App({ Component }) {
       <Center bg='white' padding='5mm'>
           <VStack divider={<Divider />} >
               <Models />
+              <Predict />
           </VStack>
       </Center>
     </ChakraProvider>
