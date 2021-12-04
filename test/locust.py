@@ -1,20 +1,7 @@
 import io
 import numpy as np
 from PIL import Image
-
-from tempfile import TemporaryDirectory
 from locust import HttpUser, task, tag
-
-TMP_DIRECTORY = None
-
-
-@events.test_start.add_listener
-def on_test_start(environment, **kwargs):
-    """
-    Create directory to make virtual user work
-    """
-    global TMP_DIRECTORY
-    TMP_DIRECTORY = TemporaryDirectory()
 
 
 class RandomUser(HttpUser):
