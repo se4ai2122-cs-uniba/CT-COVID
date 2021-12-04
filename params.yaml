@@ -6,6 +6,6 @@ training:
   epochs: 25
   patience: 3
   data_path: 'data/ct'
-predicting:
+evaluation:
+  n_attention_maps: 100
   data_path: 'data/ct'
-
