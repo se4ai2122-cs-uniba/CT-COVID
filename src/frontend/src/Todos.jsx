@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useState} from 'react';
 import {
     Box,
     Button,
@@ -15,7 +15,7 @@ import {
     Stack,
     Text,
     useDisclosure
-} from "@chakra-ui/core";
+} from '@chakra-ui/react';
 
 const TodosContext = React.createContext({
   todos: [], fetchTodos: () => {}

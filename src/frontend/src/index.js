@@ -1,18 +1,18 @@
-import React from "react";
-import { render } from 'react-dom';
-import { ThemeProvider } from "@chakra-ui/core";
+import React from 'react';
+import ReactDOM from 'react-dom';
+import { ChakraProvider } from '@chakra-ui/react';
 
-import Header from "./Components/Header";
-import Todos from "./Components/Todos";
+import Header from './Header';
+import Todos from './Todos'
 
-function App() {
+function App({ Component }) {
   return (
-    <ThemeProvider>
+    <ChakraProvider>
       <Header />
       <Todos />
-    </ThemeProvider>
+    </ChakraProvider>
   )
 }
 
-const rootElement = document.getElementById("root")
-render(<App />, rootElement)
+const rootElement = document.getElementById('root')
+ReactDOM.render(<App />, rootElement)
