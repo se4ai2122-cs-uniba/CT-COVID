@@ -1,15 +1,24 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
-import { ChakraProvider } from '@chakra-ui/react';
+import React from 'react'
+import ReactDOM from 'react-dom'
+import {
+    ChakraProvider,
+    Center,
+    VStack,
+    Divider
+} from '@chakra-ui/react'
 
-import Header from './Header';
-import Todos from './Todos'
+import Header from './Header'
+import Models from './Models'
 
 function App({ Component }) {
   return (
     <ChakraProvider>
       <Header />
-      <Todos />
+      <Center bg='white' padding='5mm'>
+          <VStack divider={<Divider />} >
+              <Models />
+          </VStack>
+      </Center>
     </ChakraProvider>
   )
 }

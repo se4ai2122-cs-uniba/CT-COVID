@@ -3,6 +3,7 @@ import os
 import torch
 import torchvision
 import uvicorn
+from fastapi.middleware.cors import CORSMiddleware
 
 from http import HTTPStatus
 from PIL import Image as pil
@@ -27,6 +28,13 @@ app = FastAPI(
     title="CT-COVID",
     description="This API lets you make predictions of diseases analysing CT-scans.",
     version="0.1",
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=['http://localhost:3000'],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
@@ -62,7 +70,7 @@ def load_models():
                     "example": {
                         "message": "OK",
                         "status-code": 200,
-                        "data": {"message": "Welcome to the CT-COVID analysis service!"}
+                        "message": "Welcome to the CT-COVID analysis service!"
                     }
                 }
             }
@@ -74,7 +82,7 @@ def index(request: Request):
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "data": {"message": "Welcome to the CT-COVID analysis service!"},
+        "message": "Welcome to the CT-COVID analysis service!"
     }
     return response
 
@@ -90,7 +98,7 @@ def index(request: Request):
                     "example": {
                         "message": "OK",
                         "status-code": 200,
-                        "data": {"models": ["model1", "model2", "model3"]}
+                        "models": ["model1", "model2", "model3"]
                     }
                 }
             }
@@ -105,7 +113,7 @@ def get_models_list(request: Request):
     response = {
         "message": HTTPStatus.OK.phrase,
         "status-code": HTTPStatus.OK,
-        "data": {"models": available_models},
+        "models": available_models
     }
     return response
 
