@@ -21,3 +21,17 @@ stages:
     - training.seed
     outs:
     - models/ct_net.pt
+  evaluate:
+    cmd: python src/evaluate.py
+    deps:
+    - data/ct
+    - models/ct_net.pt
+    - src/evaluate.py
+    metrics:
+    - metrics/ct_net-clf-metrics.json:
+        cache: false
+    outs:
+    - metrics/attentions
+    params:
+    - evaluation.data_path
+    - evaluation.n_attention_maps
