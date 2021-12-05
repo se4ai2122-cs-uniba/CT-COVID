@@ -32,3 +32,6 @@ stages:
         cache: false
     outs:
     - metrics/attentions
+    params:
+    - evaluation.data_path
+    - evaluation.n_attention_maps

@@ -51,6 +51,10 @@ stages:
     - path: src/evaluate.py
       md5: 67c04ebc9781c4ec3027a7968d007163
       size: 2522
+    params:
+      params.yaml:
+        evaluation.data_path: data/ct
+        evaluation.n_attention_maps: 100
     outs:
     - path: metrics/attentions
       md5: aac7caf7baf1c4eea7a37c31dd7f7259.dir
