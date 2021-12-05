@@ -18,6 +18,7 @@ function App({ Component }) {
       <Center bg='white' padding='5mm'>
           <VStack divider={<Divider />} >
               <Models />
+              <br />
               <Predict />
           </VStack>
       </Center>

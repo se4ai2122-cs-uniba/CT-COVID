@@ -32,7 +32,7 @@ function Models() {
         <ModelsContext.Provider value={{models}}>
             <VStack>
                 <Button
-                    size="sm"
+                    size="md"
                     colorScheme='teal'
                     variant='solid'
                     onClick={updateModels}>

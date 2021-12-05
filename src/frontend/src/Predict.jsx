@@ -13,6 +13,7 @@ import {
 const axios = require('axios').default
 const Endpoint = 'http://localhost:5000/'
 const ImageContext = React.createContext(null)
+const PredictContext = React.createContext(null)
 
 function Predict() {
     const [image, setImage] = React.useState(null)
@@ -42,6 +43,7 @@ function Predict() {
                     responseType: 'blob'
                 }
         ).then(response => {
+            setPrediction(response.headers.prediction)
             setImage(response.data)
         })
     }
@@ -64,12 +66,33 @@ function Predict() {
           </Wrap>
           <br />
           <Input type='file' name="file"/>
-          <Input type='submit' value='Submit'/>
+          <br />
+          <br />
+          <Center>
+              <Button
+                        type='submit'
+                        size="md"
+                        colorScheme='teal'
+                        variant='solid'>
+                        Predict
+              </Button>
+          </Center>
       </form>
 
+      <br />
       <ImageContext.Provider value={{image}}>
-      {image ? <img src={URL.createObjectURL(image)}/> : null }
+          {image ? <img src={URL.createObjectURL(image)}/> : null }
       </ImageContext.Provider>
+      <br />
+      <PredictContext.Provider value={{prediction}}>
+      {prediction ?
+      <Box bg='teal' borderRadius='md' p={4} color='white'>
+      <Center>
+         <b> Result: {prediction} </b>
+      </Center>
+      </Box>
+      : null }
+      </PredictContext.Provider>
       </VStack>
       )
 }
