@@ -5,17 +5,18 @@ import {
     Wrap,
     WrapItem,
     Center,
-    Input
+    Input,
+    Image,
+    Box
 } from '@chakra-ui/react'
 
 const axios = require('axios').default
 const Endpoint = 'http://localhost:5000/'
+const ImageContext = React.createContext(null)
 
 function Predict() {
-    const plotPrediction = (response) => {
-
-    }
-
+    const [image, setImage] = React.useState(null)
+    const [prediction, setPrediction] = React.useState(null)
     const handleSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData(e.currentTarget);
@@ -27,25 +28,26 @@ function Predict() {
         formData.delete('xmax');
         formData.delete('ymin');
         formData.delete('ymax');
-        const response = axios.post(Endpoint + 'predict', formData,
-            {
-                headers: {
-                    'Content-Type': 'multipart/form-data'
-                },
-                params: {
-                    xmin,
-                    ymin,
-                    xmax,
-                    ymax,
+        axios.post(Endpoint + 'predict', formData,
+                {
+                    headers: {
+                        'Content-Type': 'multipart/form-data'
+                    },
+                    params: {
+                        xmin,
+                        ymin,
+                        xmax,
+                        ymax,
+                    },
+                    responseType: 'blob'
                 }
-            }
-        )
-        console.log(response)
-        plotPrediction(response)
+        ).then(response => {
+            setImage(response.data)
+        })
     }
       return (
+      <VStack>
       <form onSubmit={handleSubmit}>
-        <VStack>
           <Wrap spacing='30px'>
               <WrapItem>
                 <Input placeholder='xmin' name="xmin"  />
@@ -62,10 +64,13 @@ function Predict() {
           </Wrap>
           <br />
           <Input type='file' name="file"/>
-          <Input type='submit' value='Submit' />
-
-        </VStack>
+          <Input type='submit' value='Submit'/>
       </form>
+
+      <ImageContext.Provider value={{image}}>
+      {image ? <img src={URL.createObjectURL(image)}/> : null }
+      </ImageContext.Provider>
+      </VStack>
       )
 }
 
