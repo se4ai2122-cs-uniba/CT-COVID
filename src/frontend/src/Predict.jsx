@@ -23,6 +23,10 @@ function Predict() {
         const xmax = formData.get('xmax');
         const ymin = formData.get('ymin');
         const ymax = formData.get('ymax');
+        formData.delete('xmin');
+        formData.delete('xmax');
+        formData.delete('ymin');
+        formData.delete('ymax');
         const response = axios.post(Endpoint + 'predict', formData,
             {
                 headers: {
@@ -36,8 +40,8 @@ function Predict() {
                 }
             }
         )
-        console.log(response.data)
-        plotPrediction(response.data)
+        console.log(response)
+        plotPrediction(response)
     }
       return (
       <form onSubmit={handleSubmit}>
