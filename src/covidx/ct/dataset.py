@@ -53,60 +53,6 @@ class CTDataset(torch.utils.data.Dataset):
         return self.targets
 
 
-class CTSeqDataset(torch.utils.data.Dataset):
-    def __init__(self, path, dataframe, equalize=False, augment=False):
-        self.path = path
-        self.equalize = equalize
-
-        # Extract the filenames and classes from the dataframe
-        self.filenames = dataframe['filename'].to_numpy()
-        self.targets = dataframe['class'].to_numpy()
-
-        # Initialize data transforms
-        if augment:
-            self.transform = torchvision.transforms.Compose([
-                torchvision.transforms.RandomHorizontalFlip(),
-                torchvision.transforms.RandomVerticalFlip(),
-                torchvision.transforms.GaussianBlur(7, sigma=(0.05, 2.0)),
-                torchvision.transforms.RandomAffine(
-                    degrees=30.0,
-                    translate=(0.1, 0.1),
-                    scale=(0.9, 1.1),
-                    shear=20.0,
-                    interpolation=torchvision.transforms.InterpolationMode.BILINEAR  # use bilinear interpolation
-                ),
-                torchvision.transforms.Normalize((0.5,), (0.5,))  # normalize to (-1, 1)
-            ])
-        else:
-            self.transform = torchvision.transforms.Normalize((0.5,), (0.5,))
-        self.to_tensor = torchvision.transforms.ToTensor()
-
-    def __len__(self):
-        return len(self.filenames)
-
-    def __getitem__(self, i):
-        # Obtain the filename and target
-        filename = self.filenames[i]
-        target = self.targets[i]
-
-        # Load and transform the image
-        slices = []
-        with pil.open(os.path.join(self.path, filename)) as img:
-            for i in range(img.n_frames):
-                if self.equalize:
-                    data = self.to_tensor(pilops.equalize(img))
-                else:
-                    data = self.to_tensor(img)
-                slices.append(data)
-                if i != img.n_frames - 1:
-                    img.seek(img.tell() + 1)
-        data = self.transform(torch.cat(slices))
-        return data, target
-
-    def get_targets(self):
-        return self.targets
-
-
 def load_datasets_labels(path, num_classes=3):
     assert num_classes == 2 or num_classes == 3
 
@@ -137,4 +83,3 @@ def load_datasets(data_path, num_classes=3, equalize=False, augment=True):
     valid_data = CTDataset(valid_images_path, valid_df, equalize=equalize, augment=False)
     test_data = CTDataset(test_images_path, test_df, equalize=equalize, augment=False)
     return train_data, valid_data, test_data
-

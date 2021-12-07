@@ -1,24 +1,6 @@
 import torch
 
 
-class LinearAttention1d(torch.nn.Module):
-    """
-    General linear attention with softmax normalization.
-    """
-    def __init__(self, in_features, out_features):
-        super(LinearAttention1d, self).__init__()
-        self.in_features = in_features
-        self.out_features = out_features
-        self.gate = torch.nn.Linear(self.in_features, self.out_features, bias=False)
-
-    def forward(self, x, g):
-        g = g.unsqueeze(2)
-        c = torch.bmm(self.gate(x), g)
-        a = torch.softmax(c, dim=1)
-        g = torch.sum(a * x, dim=1)
-        return a.squeeze(2), g
-
-
 class LinearAttention2d(torch.nn.Module):
     """
     Linear attention based on parametrized compatibility score function with softmax normalization.
