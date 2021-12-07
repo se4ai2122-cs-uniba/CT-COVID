@@ -1,3 +1,2 @@
 #!/bin/bash
-docker build -t ct-covid:cuda .
-
+docker build -t ct-covid:v1 .

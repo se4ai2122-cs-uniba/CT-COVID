@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
         - name: ct-covid
-          image: peppocola/ct-covid:cuda
+          image: peppocola/ct-covid:v1
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 5000
