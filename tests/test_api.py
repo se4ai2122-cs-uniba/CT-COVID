@@ -27,7 +27,7 @@ with TestClient(app) as client:
         response = client.get("/models")
         assert response.status_code == HTTPStatus.OK
 
-        response_models = response.json()['data']['models']
+        response_models = response.json()['models']
         assert type(response_models) == list
         assert all(map(lambda x: isinstance(x, str), response_models))
 
