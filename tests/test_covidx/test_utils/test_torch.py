@@ -1,5 +1,8 @@
 import os
 import shutil
+import tempfile
+from tempfile import NamedTemporaryFile
+
 import torch
 from covidx.utils.torch import get_optimizer, RunningAverageMetric, EarlyStopping
 import numpy as np
@@ -36,24 +39,19 @@ def test_EarlyStopping():
     model = CTNet(num_classes=3)
     state_filepath = os.path.join(MODELS_PATH, MODEL_NAME)
     model.load_state_dict(torch.load(state_filepath)['model'])
-
-    path = 'folder_for_testing'
-    os.makedirs(path, exist_ok=True)
-    trash_dir = os.path.join(path, 'checkpoint.pt')
+    path = os.path.join(tempfile.mkdtemp(), 'something.pt')
 
     with pytest.raises(ValueError) as e:
-        EarlyStopping(model, trash_dir, -1, delta)
+        EarlyStopping(model, path, -1, delta)
         assert e.message == "The patience value must be positive"
     with pytest.raises(ValueError) as e:
-        EarlyStopping(model, trash_dir, 1, -1)
+        EarlyStopping(model, path, 1, -1)
         assert e.message == "The delta value must be positive"
 
-    test_patience = EarlyStopping(model, trash_dir, patience, delta)
+    test_patience = EarlyStopping(model, path, patience, delta)
     losses = [1, 1, 2, 1, 1, 1, 1]
     for i in range(patience):
         test_patience.__call__(losses[i])
         assert test_patience.should_stop is False
     test_patience.__call__(losses[patience])
     assert test_patience.should_stop is True
-
-    shutil.rmtree(path)
