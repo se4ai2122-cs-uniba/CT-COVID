@@ -7,5 +7,6 @@
 !requirements.txt
 
 # Ignore directories and files in allowed directories
+src/frontend/
 **/.gitignore
 **/__pycache__

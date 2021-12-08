@@ -1,0 +1,9 @@
+{
+  "short_name": "CT-COVID",
+  "name": "Screening CT 3d images for interpretable COVID19 detection",
+  "icons": [],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
