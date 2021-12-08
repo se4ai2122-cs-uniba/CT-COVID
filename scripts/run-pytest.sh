@@ -1,2 +1,2 @@
 #!/bin/bash
-pytest --cov src/covidx test/
+pytest --cov src/covidx tests/
