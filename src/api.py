@@ -3,12 +3,14 @@ import os
 import torch
 import torchvision
 import uvicorn
-from fastapi.middleware.cors import CORSMiddleware
 
 from http import HTTPStatus
 from PIL import Image as pil
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Query, FastAPI, Request, UploadFile, File
 from fastapi.responses import StreamingResponse, FileResponse
+
+from monitoring import setup_prometheus_instrumentator
 from covidx.utils.plot import save_binary_attention_map
 from covidx.ct.models import CTNet
 
@@ -29,14 +31,24 @@ app = FastAPI(
     description="This API lets you make predictions of diseases analysing CT-scans.",
     version="0.1",
 )
+
+# Fix CORS errors (arising when testing the frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000'],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["prediction"],
 )
+
+
+@app.on_event("startup")
+async def expose_instrumentator():
+    # Expose Prometheus FastAPI instrumentator
+    # See https://github.com/trallnag/prometheus-fastapi-instrumentator/issues/80
+    instrumentator = setup_prometheus_instrumentator()
+    instrumentator.instrument(app).expose(app, include_in_schema=False, should_gzip=True)
 
 
 @app.on_event("startup")
