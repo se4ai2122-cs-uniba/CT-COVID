@@ -135,10 +135,10 @@ def get_models_list(request: Request):
 )
 async def predict(
     request: Request,
-    xmin: int = Query(None, description="The top-left bounding box X-coordinate."),
-    ymin: int = Query(None, description="The top-left bounding box Y-coordinate."),
-    xmax: int = Query(None, description="The bottom-right bounding box X-coordinate."),
-    ymax: int = Query(None, description="The bottom-right bounding box Y-coordinate."),
+    xmin: int = Query(0, ge=0, description="The top-left bounding box X-coordinate."),
+    ymin: int = Query(0, ge=0, description="The top-left bounding box Y-coordinate."),
+    xmax: int = Query(0, ge=0, description="The bottom-right bounding box X-coordinate."),
+    ymax: int = Query(0, ge=0, description="The bottom-right bounding box Y-coordinate."),
     file: UploadFile = File(..., description="The CT image to predict.")
 ):
     # Load and preprocess the image by upload
