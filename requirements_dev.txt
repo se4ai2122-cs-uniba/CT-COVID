@@ -1,0 +1,5 @@
+dvc[gdrive]
+locust
+pytest
+pytest-cov
+great_expectations
