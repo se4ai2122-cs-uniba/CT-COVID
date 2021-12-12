@@ -68,7 +68,6 @@ def model_output(
 
     def instrumentation(info: Info) -> None:
         predicted_condition = info.response.headers.get("X-prediction")
-        print(info.response.headers)
         if predicted_condition is not None:
             metric.observe(float(predicted_condition))
 
