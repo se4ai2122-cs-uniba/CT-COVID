@@ -8,7 +8,7 @@ from http import HTTPStatus
 from PIL import Image as pil
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Query, FastAPI, Request, UploadFile, File
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, Response
 
 from monitoring import setup_prometheus_instrumentator
 from covidx.utils.plot import save_binary_attention_map
@@ -35,7 +35,7 @@ app = FastAPI(
 # Fix CORS errors (arising when testing the frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=["localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -47,7 +47,11 @@ app.add_middleware(
 async def expose_instrumentator():
     # Expose Prometheus FastAPI instrumentator
     # See https://github.com/trallnag/prometheus-fastapi-instrumentator/issues/80
-    instrumentator = setup_prometheus_instrumentator()
+    instrumentator = setup_prometheus_instrumentator({'request_size' : {},
+                                                      'response_size' : {},
+                                                      'latency' : {},
+                                                      'requests' : {},
+                                                      'model_output' : {'buckets' : tuple([float(x) for x in PREDICTION_TAGS.keys()])}})
     instrumentator.instrument(app).expose(app, include_in_schema=False, should_gzip=True)
 
 
@@ -147,6 +151,7 @@ def get_models_list(request: Request):
 )
 async def predict(
     request: Request,
+    response: Response,
     xmin: int = Query(0, ge=0, description="The top-left bounding box X-coordinate."),
     ymin: int = Query(0, ge=0, description="The top-left bounding box Y-coordinate."),
     xmax: int = Query(0, ge=0, description="The bottom-right bounding box X-coordinate."),
@@ -176,7 +181,8 @@ async def predict(
     tensor = torchvision.transforms.functional.normalize(tensor, (-1,), (2,))
     save_binary_attention_map(stream, tensor, att1, att2)
     stream.seek(0)
-    return StreamingResponse(stream, headers={"prediction": PREDICTION_TAGS[prediction]}, media_type="image/png")
+    return StreamingResponse(stream, headers={"prediction": PREDICTION_TAGS[prediction],
+                                              "X-prediction" : str(prediction)}, media_type="image/png")
 
 
 def upload_file(bbox: tuple, file: UploadFile = File(...)):

@@ -1,16 +1,20 @@
-import prometheus_fastapi_instrumentator as pinst
-
+from typing import Callable
 
 # A dictionary mapping names to Prometheus FastAPI metrics
+import prometheus_fastapi_instrumentator as pinst
+from prometheus_fastapi_instrumentator.metrics import Info
+from prometheus_client import Histogram
+
+
 METRICS = {
     'request_size': pinst.metrics.request_size,
     'response_size': pinst.metrics.response_size,
     'requests': pinst.metrics.requests,
-    'latency': pinst.metrics.latency
+    'latency': pinst.metrics.latency,
 }
 
 
-def setup_prometheus_instrumentator(metrics=['requests']):
+def setup_prometheus_instrumentator(metrics=None):
     """
     Setup a Prometheus FastAPI instrumentator.
 
@@ -18,6 +22,9 @@ def setup_prometheus_instrumentator(metrics=['requests']):
     :return: An instrumentator with metrics.
     """
     # Setup Prometheus instrumentator
+    if metrics is None:
+        metrics = {'requests': {}}
+
     instrumentator = pinst.Instrumentator(
         should_group_status_codes=True,
         should_ignore_untemplated=True,
@@ -28,16 +35,44 @@ def setup_prometheus_instrumentator(metrics=['requests']):
     )
 
     # Add metrics to the instrumentator
-    instrumentator_metrics = [METRICS[name] for name in metrics]
-    for metric_fn in instrumentator_metrics:
+    for metric in metrics.keys():
         instrumentator.add(
-            metric_fn(
+            METRICS[metric](
                 should_include_handler=True,
                 should_include_method=True,
                 should_include_status=True,
                 metric_namespace='fastapi',
-                metric_subsystem='model'
+                metric_subsystem='',
+                **metrics[metric]
             )
         )
 
     return instrumentator
+
+
+# ----- custom metrics -----
+def model_output(
+    metric_name: str = "model_output",
+    metric_doc: str = "Output value of model",
+    metric_namespace: str = "",
+    metric_subsystem: str = "",
+    buckets=(0, 1, 2), **kwargs
+) -> Callable[[Info], None]:
+    metric = Histogram(
+        metric_name,
+        metric_doc,
+        buckets=buckets,
+        namespace=metric_namespace,
+        subsystem=metric_subsystem,
+    )
+
+    def instrumentation(info: Info) -> None:
+        predicted_condition = info.response.headers.get("X-prediction")
+        print(info.response.headers)
+        if predicted_condition is not None:
+            metric.observe(float(predicted_condition))
+
+    return instrumentation
+
+
+METRICS['model_output'] = model_output
