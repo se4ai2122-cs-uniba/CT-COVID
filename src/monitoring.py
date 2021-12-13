@@ -1,11 +1,11 @@
 from typing import Callable
 
-# A dictionary mapping names to Prometheus FastAPI metrics
 import prometheus_fastapi_instrumentator as pinst
 from prometheus_fastapi_instrumentator.metrics import Info
 from prometheus_client import Histogram
 
 
+# A dictionary mapping names to Prometheus FastAPI metrics
 METRICS = {
     'request_size': pinst.metrics.request_size,
     'response_size': pinst.metrics.response_size,
@@ -50,7 +50,6 @@ def setup_prometheus_instrumentator(metrics=None):
     return instrumentator
 
 
-# ----- custom metrics -----
 def model_output(
     metric_name: str = "model_output",
     metric_doc: str = "Output value of model",
