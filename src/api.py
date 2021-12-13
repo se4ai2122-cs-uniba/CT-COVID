@@ -3,12 +3,14 @@ import os
 import torch
 import torchvision
 import uvicorn
-from fastapi.middleware.cors import CORSMiddleware
 
 from http import HTTPStatus
 from PIL import Image as pil
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi import Query, FastAPI, Request, UploadFile, File
-from fastapi.responses import StreamingResponse, FileResponse
+from fastapi.responses import StreamingResponse, Response
+
+from monitoring import setup_prometheus_instrumentator
 from covidx.utils.plot import save_binary_attention_map
 from covidx.ct.models import CTNet
 
@@ -29,14 +31,28 @@ app = FastAPI(
     description="This API lets you make predictions of diseases analysing CT-scans.",
     version="0.1",
 )
+
+# Fix CORS errors (arising when testing the frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=['http://localhost:3000'],
+    allow_origins=["localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
     expose_headers=["prediction"],
 )
+
+
+@app.on_event("startup")
+async def expose_instrumentator():
+    # Expose Prometheus FastAPI instrumentator
+    # See https://github.com/trallnag/prometheus-fastapi-instrumentator/issues/80
+    instrumentator = setup_prometheus_instrumentator({'request_size' : {},
+                                                      'response_size' : {},
+                                                      'latency' : {},
+                                                      'requests' : {},
+                                                      'model_output' : {'buckets' : tuple([float(x) for x in PREDICTION_TAGS.keys()])}})
+    instrumentator.instrument(app).expose(app, include_in_schema=False, should_gzip=True)
 
 
 @app.on_event("startup")
@@ -135,10 +151,11 @@ def get_models_list(request: Request):
 )
 async def predict(
     request: Request,
-    xmin: int = Query(None, description="The top-left bounding box X-coordinate."),
-    ymin: int = Query(None, description="The top-left bounding box Y-coordinate."),
-    xmax: int = Query(None, description="The bottom-right bounding box X-coordinate."),
-    ymax: int = Query(None, description="The bottom-right bounding box Y-coordinate."),
+    response: Response,
+    xmin: int = Query(0, ge=0, description="The top-left bounding box X-coordinate."),
+    ymin: int = Query(0, ge=0, description="The top-left bounding box Y-coordinate."),
+    xmax: int = Query(0, ge=0, description="The bottom-right bounding box X-coordinate."),
+    ymax: int = Query(0, ge=0, description="The bottom-right bounding box Y-coordinate."),
     file: UploadFile = File(..., description="The CT image to predict.")
 ):
     # Load and preprocess the image by upload
@@ -164,7 +181,8 @@ async def predict(
     tensor = torchvision.transforms.functional.normalize(tensor, (-1,), (2,))
     save_binary_attention_map(stream, tensor, att1, att2)
     stream.seek(0)
-    return StreamingResponse(stream, headers={"prediction": PREDICTION_TAGS[prediction]}, media_type="image/png")
+    return StreamingResponse(stream, headers={"prediction": PREDICTION_TAGS[prediction],
+                                              "X-prediction" : str(prediction)}, media_type="image/png")
 
 
 def upload_file(bbox: tuple, file: UploadFile = File(...)):

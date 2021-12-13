@@ -8,9 +8,10 @@ scikit-learn
 torch
 torchvision
 opencv-python
+
 PyYAML
 pydantic
 python-multipart
-dvc[gdrive]
-fastapi[all]
 uvicorn
+fastapi[all]
+prometheus_fastapi_instrumentator
