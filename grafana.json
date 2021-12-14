@@ -88,7 +88,8 @@
                 "value": 3
               }
             ]
-          }
+          },
+          "unit": "s"
         },
         "overrides": [
           {
@@ -168,7 +169,8 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": true,
-          "expr": "rate(fastapi_http_request_duration_seconds_sum{handler=~\"/|/docs|/models|/predict\",job=\"ct-covid\"}[5m])",
+          "expr": "rate(fastapi_http_request_duration_seconds_sum{handler=~\"/|/docs|/models|/predict\",job=\"ct-covid\",status=\"2xx\"}[5m])",
+          "format": "time_series",
           "interval": "",
           "legendFormat": "",
           "refId": "A"
@@ -336,10 +338,17 @@
       "dashLength": 10,
       "dashes": false,
       "description": "Sum of request sizes",
-      "fill": 1,
-      "fillGradient": 10,
+      "fieldConfig": {
+        "defaults": {
+          "displayName": "Received data rate",
+          "unit": "Bps"
+        },
+        "overrides": []
+      },
+      "fill": 2,
+      "fillGradient": 8,
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
         "y": 8
@@ -356,7 +365,7 @@
         "values": false
       },
       "lines": true,
-      "linewidth": 7,
+      "linewidth": 5,
       "nullPointMode": "null",
       "options": {
         "alertThreshold": true
@@ -377,7 +386,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "rate(fastapi_http_request_size_bytes_sum{handler=~\"/predict\"}[5m])",
+          "expr": "rate(fastapi_http_request_size_bytes_sum{handler=~\"/predict\",job=\"ct-covid\",status=\"2xx\"}[5m])",
           "format": "time_series",
           "interval": "",
           "legendFormat": "",
@@ -392,23 +401,7 @@
         "sort": 0,
         "value_type": "individual"
       },
-      "transformations": [
-        {
-          "id": "calculateField",
-          "options": {
-            "binary": {
-              "left": "{handler=\"/predict\", instance=\"host.docker.internal:5000\", job=\"ct-covid\", method=\"POST\", status=\"2xx\"}",
-              "operator": "/",
-              "reducer": "sum",
-              "right": ""
-            },
-            "mode": "binary",
-            "reduce": {
-              "reducer": "sum"
-            }
-          }
-        }
-      ],
+      "transformations": [],
       "transparent": true,
       "type": "graph",
       "xaxis": {
@@ -419,7 +412,7 @@
       "yaxes": [
         {
           "$$hashKey": "object:136",
-          "format": "short",
+          "format": "Bps",
           "label": "",
           "logBase": 1,
           "show": true
@@ -556,7 +549,7 @@
             "uid": "${DS_PROMETHEUS}"
           },
           "exemplar": false,
-          "expr": "fastapi_http_requests_total{handler=~\"/|/docs|/models|/predict\"}",
+          "expr": "fastapi_http_requests_total{handler=~\"/|/docs|/models|/predict\",job=\"ct-covid\",status=\"2xx\"}",
           "format": "time_series",
           "interval": "",
           "legendFormat": "",
@@ -576,13 +569,13 @@
     "list": []
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-5m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "CT-COVID",
   "uid": "YpwW4jh7k",
-  "version": 5,
+  "version": 11,
   "weekStart": ""
 }
