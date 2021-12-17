@@ -1,0 +1,6 @@
+groups:
+  - name: Alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m

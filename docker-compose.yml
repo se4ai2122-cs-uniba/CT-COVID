@@ -1,0 +1,36 @@
+version: "3"
+
+services:
+  prometheus:
+    restart: always
+    image: prom/prometheus
+    container_name: prometheus
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ${PWD}/alert_rules.yml:/etc/prometheus/alert_rules.yml
+    expose:
+      - "9090"
+    ports:
+      - 9090:9090
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+  alertmanager:
+    restart: always
+    depends_on:
+      - prometheus
+    image: prom/alertmanager
+    container_name: alertmanager
+    volumes:
+      - ${PWD}/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+    expose:
+      - "9093"
+    ports:
+      - 9093:9093
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+
+
+
