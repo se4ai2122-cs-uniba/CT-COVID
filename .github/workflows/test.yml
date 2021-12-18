@@ -13,7 +13,8 @@ jobs:
     env:
       OS: ubuntu-latest
       PYTHON: '3.9'
-    steps:  
+    steps:
+    - name: Checkout
     - uses: checkout@v2
       with:
         fetch-depth: ‘2’
