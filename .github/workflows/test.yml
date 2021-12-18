@@ -14,22 +14,25 @@ jobs:
       OS: ubuntu-latest
       PYTHON: '3.9'
     steps:
-    - name: Checkout
     - uses: checkout@v2
-      with:
-        fetch-depth: ‘2’
+    
     - name: Setup Python
       uses: actions/setup-python@v2.3.1
       with:
-        python-version: '3.9'
+        python-version: 3.9
+        
     - name: DVC pull
+      env:
+          GDRIVE_CREDENTIALS_DATA: ${{ secrets.GDRIVE_CREDENTIALS_DATA }}
       run: |
         pip install -r requirements.txt
         pip install dvc[gdrive]
         dvc pull models/
+        
     - name: Generate Report
       run: |
         pip install pytest pytest-cov 
         pytest --cov src/covidx tests/ -m "not gpu"
+        
     - name: Upload Coverage to Codecov
       uses: codecov/codecov-action@v2.1.0
