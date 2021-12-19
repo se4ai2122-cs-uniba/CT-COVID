@@ -37,6 +37,3 @@ jobs:
       run: |
         pip install pytest pytest-cov 
         PYTHONPATH='src' pytest --cov src/covidx tests/ -m "not gpu"
-        
-    - name: Upload Coverage to Codecov
-      uses: codecov/codecov-action@v2.1.0
