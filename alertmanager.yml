@@ -1,15 +1,39 @@
+global:
+  resolve_timeout: 5m
+
 route:
   group_by: ['alertname']
-  group_wait: 30s
-  group_interval: 5m
-  repeat_interval: 1h
-  receiver: gmail
+  group_wait: 10s
+  group_interval: 10s
+  repeat_interval: 10m
+  receiver: 'prometheus-alerter'
+
 receivers:
-- name: 'gmail'
-  email_configs:
-  - to: 'benedettifrancesco98@gmail.com'
-    from: 'askonlinetraining@gmail.com'
-    smarthost: smtp.gmail.com:587
-    auth_username: 'benedettifrancesco98@gmail.com'
-    auth_identity: 'benedettifrancesco98@gmail.com'
-    auth_password: 'qcudbzqbpplwbltf'
+  - name: 'prometheus-alerter'
+    slack_configs:
+      - api_url: "https://hooks.slack.com/services/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"
+        channel: '#alerts'
+        icon_url: https://avatars3.githubusercontent.com/u/3380462
+        send_resolved: true
+        title: |-
+          [{{ .Status | toUpper }}{{ if eq .Status "firing" }}:{{ .Alerts.Firing | len }}{{ end }}] {{ .CommonLabels.alertname }} for {{ .CommonLabels.job }}
+          {{- if gt (len .CommonLabels) (len .GroupLabels) -}}
+            {{" "}}(
+            {{- with .CommonLabels.Remove .GroupLabels.Names }}
+              {{- range $index, $label := .SortedPairs -}}
+                {{ if $index }}, {{ end }}
+                {{- $label.Name }}="{{ $label.Value -}}"
+              {{- end }}
+            {{- end -}}
+            )
+          {{- end }}
+        text: >-      
+          *Alert details*:
+          
+          {{ range .Alerts -}}
+            *Alert:* {{ .Annotations.title }}{{ if .Labels.severity }} - `{{ .Labels.severity }}`{{ end }}
+          *Description:* {{ .Annotations.description }}
+          *Details:*
+            {{ range .Labels.SortedPairs }} • *{{ .Name }}:* `{{ .Value }}`
+            {{ end }}
+          {{ end }}

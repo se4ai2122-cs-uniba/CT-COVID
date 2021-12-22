@@ -4,3 +4,19 @@ groups:
       - alert: ServiceDown
         expr: up == 0
         for: 1m
+        annotations:
+          title: 'Instance {{ $labels.instance }} down'
+          description: '{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute.'
+        labels:
+          severity: 'critical'
+      - alert: HighResponseTime
+        expr: rate(fastapi_http_request_duration_seconds_sum{handler=~"/|/predict",job="ct-covid",status="2xx"}[1m]) > 2
+        for: 1m
+        annotations:
+          title: 'Instance {{ $labels.instance }} is being slow'
+          description: 'The predict endpoint of {{ $labels.instance }} is being slow: in the last minute the average response time has been greater than 5 seconds.'
+        labels:
+          severity: 'critical'
+
+
+
