@@ -1,4 +1,5 @@
 import React from 'react'
+import axios from 'axios'
 import {
     VStack,
     Button,
@@ -6,7 +7,6 @@ import {
     ListItem
 } from '@chakra-ui/react'
 
-const axios = require('axios').default
 const Endpoint = 'http://localhost:5000/'
 const ModelsContext = React.createContext([])
 
