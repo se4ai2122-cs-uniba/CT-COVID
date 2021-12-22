@@ -36,6 +36,6 @@ jobs:
     - name: Generate Report
       run: |
         pip install pytest pytest-cov 
-        PYTHONPATH='src' pytest --cov src/covidx tests/ -m "not gpu"
+        PYTHONPATH='src' pytest --cov src/covidx tests/ -m "not gpu" --cov-report=xml
     - name: Codecov
       uses: codecov/codecov-action@v2.1.0
