@@ -26,7 +26,7 @@ jobs:
     - name: Install dependecies
       run: |
         pip install -r requirements.txt
-        pip install ffmpeg libsm6 libxext6
+        apt-get install ffmpeg libsm6 libxext6
         pip install dvc[gdrive]
     - name: DVC pull
       env:
