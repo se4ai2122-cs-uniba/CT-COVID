@@ -25,6 +25,7 @@ jobs:
         python-version: 3.9
     - name: Install dependecies
       run: |
+        pip install -r requirements.txt
         pip install pylint
     - name: Static Code Analysis
       run: |
