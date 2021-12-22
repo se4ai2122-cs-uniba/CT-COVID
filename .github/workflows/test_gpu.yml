@@ -35,10 +35,7 @@ jobs:
           GDRIVE_CREDENTIALS_DATA: ${{ secrets.GDRIVE_CREDENTIALS_DATA }}
       run: |
         dvc pull models/ct_net.pt
-        dvc pull data/ct/train/
-        dvc pull data/ct/valid/
-        dvc pull data/ct/train.csv
-        dvc pull data/ct/valid.csv
+        dvc pull data/ct -j 256
         
     - name: Generate Report
       run: |
