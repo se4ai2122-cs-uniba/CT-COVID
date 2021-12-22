@@ -42,15 +42,12 @@ It is preferable to run the container with a GPU, but if you don't have one, you
 If you just want to run the api:
 ```bash
 pip install -r requirements.txt
-python src/api.py
 ```
 
 If you want to use tools like `locust`, `pytest` and `great_expectations`:
 
 ```bash
-pip install -r requirements.txt
 pip install -r requirements_dev.txt
-python src/api.py
 ```
 
 ### Run api
