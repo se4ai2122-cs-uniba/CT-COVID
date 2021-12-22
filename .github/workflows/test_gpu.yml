@@ -1,0 +1,41 @@
+name: Gpu-Testing
+
+on:
+  workflow_dispatch:
+jobs:
+
+  build:
+    runs-on: [self-hosted, cml, gpu]
+    env:
+      OS: ubuntu-latest
+      PYTHON: '3.9'
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+          fetch-depth: 0
+    - name: Update apt
+      run: |
+         apt-get update -y && apt-get upgrade -y
+         apt-get install ffmpeg libsm6 libxext6
+    - name: Setup Python
+      uses: actions/setup-python@v2.3.1
+      with:
+        python-version: 3.9
+    - name: Install dependecies
+      run: |
+        pip install -r requirements.txt
+        pip install dvc[gdrive]
+    - name: DVC pull
+      env:
+          GDRIVE_CREDENTIALS_DATA: ${{ secrets.GDRIVE_CREDENTIALS_DATA }}
+      run: |
+        dvc pull models/ct_net.pt
+        dvc pull data/ct -j 256
+        
+    - name: Generate Report
+      run: |
+        pip install pytest pytest-cov 
+        PYTHONPATH='src' pytest --cov src/covidx tests/ --cov-report=xml
+    - name: Codecov
+      uses: codecov/codecov-action@v2.1.0
