@@ -11,7 +11,7 @@ route:
 receivers:
   - name: 'prometheus-alerter'
     slack_configs:
-      - api_url: "https://hooks.slack.com/services/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"
+      - api_url: "INSERT API HERE"
         channel: '#alerts'
         icon_url: https://avatars3.githubusercontent.com/u/3380462
         send_resolved: true
