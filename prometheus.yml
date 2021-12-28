@@ -27,6 +27,9 @@ scrape_configs:
       - targets: ['host.docker.internal:5000']
   - job_name: 'alertmanager'
     static_configs:
-      - targets: [ 'host.docker.internal:9093' ]
+      - targets: ['host.docker.internal:9093']
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: [ 'host.docker.internal:9100']
 
 
