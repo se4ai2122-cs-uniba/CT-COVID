@@ -1,2 +1,2 @@
 #!/bin/bash
-docker run --rm -it -p 5000:5000 ct-covid:v1
+docker run -p 5000:5000 --rm -it --name=ct-covid peppocola/ct-covid:v1
