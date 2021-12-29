@@ -1,0 +1,38 @@
+groups:
+  - name: Alerts
+    rules:
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        annotations:
+          title: 'Instance {{ $labels.instance }} down'
+          description: '{{ $labels.instance }} of job {{ $labels.job }} has been down for more than 1 minute.'
+        labels:
+          severity: 'critical'
+      - alert: HighResponseTime
+        expr: rate(fastapi_http_request_duration_seconds_sum{handler=~"/|/predict",job="ct-covid",status="2xx"}[1m]) > 2
+        for: 5m
+        annotations:
+          title: 'Instance {{ $labels.instance }} is being slow'
+          description: 'The predict endpoint of {{ $labels.instance }} is being slow: in the last 5 minutes the average response time has been greater than 5 seconds.'
+        labels:
+          severity: 'critical'
+      - alert: CPU_Overload
+        expr: node_load1 > 3
+        for: 1m
+        annotations:
+          title: 'Server under high load'
+          description: 'The average load over the server CPU in the last minute has been {{ $value}}, which is higher than the safety threshold of 3.'
+        labels:
+          severity: 'warning'
+      - alert: High_memory_load
+        expr: (node_memory_MemTotal_bytes - node_memory_MemFree_bytes - node_memory_Cached_bytes - node_memory_Buffers_bytes) / node_memory_MemTotal_bytes * 100 >= 80
+        for: 1m
+        annotations:
+          title: 'Server memory is almost full'
+          description: 'Server is using {{$value}}%, of its memory.'
+        labels:
+          severity: 'warning'
+
+
+
