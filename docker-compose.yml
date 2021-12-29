@@ -8,8 +8,8 @@ services:
     command:
       - --config.file=/etc/prometheus/prometheus.yml
     volumes:
-      - ${PWD}/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ${PWD}/alert_rules.yml:/etc/prometheus/alert_rules.yml
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./alert_rules.yml:/etc/prometheus/alert_rules.yml
     expose:
       - "9090"
     ports:
@@ -23,7 +23,7 @@ services:
     image: prom/alertmanager
     container_name: alertmanager
     volumes:
-      - ${PWD}/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - ./alertmanager.yml:/etc/alertmanager/alertmanager.yml
     expose:
       - "9093"
     ports:
