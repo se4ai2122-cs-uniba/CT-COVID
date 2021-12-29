@@ -11,7 +11,7 @@ route:
 receivers:
   - name: 'prometheus-alerter'
     slack_configs:
-      - api_url: "INSERT API HERE"
+      - api_url: "${{ secrets.SLACK_API_KEY }}"
         channel: '#alerts'
         icon_url: https://avatars3.githubusercontent.com/u/3380462
         send_resolved: true
