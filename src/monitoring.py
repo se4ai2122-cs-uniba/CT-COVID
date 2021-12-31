@@ -66,7 +66,7 @@ def model_output(
     )
 
     def instrumentation(info: Info) -> None:
-        if info.modified_handler == '/predict':
+        if info.modified_handler == '/predict' and info.response and hasattr(info.response, "headers"):
             predicted_condition = info.response.headers.get("X-prediction")
             if predicted_condition is not None:
                 metric.observe(float(predicted_condition))
