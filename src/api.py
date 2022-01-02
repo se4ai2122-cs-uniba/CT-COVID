@@ -35,7 +35,7 @@ app = FastAPI(
 # Fix CORS errors (arising when testing the frontend)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["localhost:3000"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
