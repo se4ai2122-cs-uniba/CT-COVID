@@ -2,7 +2,7 @@ version: "3"
 
 services:
   prometheus:
-    restart: always
+    restart: unless-stopped
     image: prom/prometheus
     container_name: prometheus
     command:
@@ -17,7 +17,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
   alertmanager:
-    restart: always
+    restart: unless-stopped
     depends_on:
       - prometheus
     image: prom/alertmanager
@@ -31,7 +31,7 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
   node-exporter:
-    restart: always
+    restart: unless-stopped
     depends_on:
       - prometheus
     image: prom/node-exporter
@@ -63,5 +63,12 @@ services:
       - 3000:3000
     extra_hosts:
       - "host.docker.internal:host-gateway"
-
+  api:
+    restart: unless-stopped
+    image: peppocola/ct-covid:v1
+    container_name: api
+    expose:
+      - "5000"
+    ports:
+      - 5000:5000
 
